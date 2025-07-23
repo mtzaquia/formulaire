@@ -42,6 +42,10 @@ final class MyFormObject {
             checker.addError(POSIXError(.EAFNOSUPPORT), field: \.name)
             checker.focus(on: \.name)
         }
+
+        if !hasCar {
+            checker.addError(POSIXError(.EAFNOSUPPORT), field: \.hasCar)
+        }
     }
 }
 
@@ -62,6 +66,17 @@ struct ContentView: View {
 
             Section {
                 form.textField(for: \.addressLine1, label: "Address line 1")
+            }
+
+            form.customControl(for: \.hasCar) { control in
+                HStack {
+                    Toggle(isOn: control.binding) {
+                        Text("YEAH!")
+                    }
+
+                    Text(control.error?.localizedDescription ?? "NO ERROR!")
+                        .foregroundStyle(control.error == nil ? .black : .red)
+                }
             }
 
             Section {

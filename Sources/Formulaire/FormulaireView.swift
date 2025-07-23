@@ -12,11 +12,19 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
     let builder: (FormulaireBuilder<F>) -> C
 
     @State private var checker: FormulaireChecker<F> = FormulaireChecker<F>()
+//    @StateObject private var tracker: FormulaireTracker = FormulaireTracker()
     @FocusState private var focus: String?
 
     public var body: some View {
         Form {
-            builder(FormulaireBuilder<F>(formulaire: $object, checker: $checker, focus: $focus))
+            builder(
+                FormulaireBuilder<F>(
+                    formulaire: $object,
+                    checker: $checker,
+                    focus: $focus // ,
+//                    formulaireTracker: tracker
+                )
+            )
         }
         .toolbar {
             ToolbarItem(placement: .keyboard) {
@@ -24,19 +32,19 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                 // do that with the FormulaireBuilder methods, manipulating a binding from the FormulaireView.
                 KeyboardNavigationView(
                     onNext: {
-                        let fields = F.__formulaireFields
+                        let fields = F.__formulaireFields // .filter { tracker.existingFields.contains($0.keyPath.debugDescription) }
                         let length = fields.count
                         guard let currentIndex = fields.firstIndex(where: { $0.keyPath.debugDescription == focus }) else {
                             return
                         }
-                        focus = fields[max(currentIndex + 1, length - 1)].keyPath.debugDescription
+                        focus = fields[min(currentIndex + 1, length - 1)].keyPath.debugDescription
                     },
                     onPrevious: {
-                        let fields = F.__formulaireFields
+                        let fields = F.__formulaireFields // .filter { tracker.existingFields.contains($0.keyPath.debugDescription) }
                         guard let currentIndex = fields.firstIndex(where: { $0.keyPath.debugDescription == focus }) else {
                             return
                         }
-                        focus = fields[min(currentIndex - 1, 0)].keyPath.debugDescription
+                        focus = fields[max(currentIndex - 1, 0)].keyPath.debugDescription
                     },
                     onDone: { focus = nil }
                 )

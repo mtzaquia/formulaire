@@ -8,11 +8,24 @@
 import Foundation
 import SwiftUI
 
+//public final class FormulaireTracker: ObservableObject {
+//    var existingFields: Set<String> = Set<String>()
+//}
+
 @MainActor
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
     @Binding var checker: FormulaireChecker<F>
     @FocusState.Binding var focus: String?
+
+//    let formulaireTracker: FormulaireTracker
+}
+
+@MainActor
+public struct ControlBuilder<F: Formulaire, V> {
+    public var binding: Binding<V>
+    @FocusState.Binding public var focus: String?
+    public let error: Error?
 }
 
 // MARK: - Views
@@ -34,7 +47,8 @@ public extension FormulaireBuilder {
     }
 
     func textField(for field: WritableKeyPath<F, String>, label: String) -> some View {
-        VStack(alignment: .leading) {
+//        formulaireTracker.existingFields.insert(field.debugDescription)
+        return VStack(alignment: .leading) {
             Text(label)
             TextField(label, text: $formulaire[dynamicMember: field])
                 .focused($focus, equals: field.debugDescription)
@@ -44,7 +58,8 @@ public extension FormulaireBuilder {
     }
 
     func toggle(for field: WritableKeyPath<F, Bool>, label: String) -> some View {
-        VStack(alignment: .leading) {
+//        formulaireTracker.existingFields.insert(field.debugDescription)
+        return VStack(alignment: .leading) {
             Toggle(label, isOn: $formulaire[dynamicMember: field])
 
             ErrorText(error: checker.error(for: field))
@@ -57,7 +72,8 @@ public extension FormulaireBuilder {
         step: Int = 1,
         range: ClosedRange<Int>? = nil
     ) -> some View {
-        VStack(alignment: .leading) {
+//        formulaireTracker.existingFields.insert(field.debugDescription)
+        return VStack(alignment: .leading) {
             Stepper(
                 value: $formulaire[dynamicMember: field].onChange {
                     guard let range else { return }
@@ -73,9 +89,21 @@ public extension FormulaireBuilder {
             ErrorText(error: checker.error(for: field))
         }
     }
+
+    func customControl<V, C: View>(
+        for field: WritableKeyPath<F, V>,
+        @ViewBuilder controlBuilder: (ControlBuilder<F, V>) -> C
+    ) -> some View {
+//        formulaireTracker.existingFields.insert(field.debugDescription)
+        return controlBuilder(
+            ControlBuilder(
+                binding: $formulaire[dynamicMember: field],
+                focus: $focus,
+                error: checker.error(for: field)
+            )
+        )
+    }
 }
-
-
 
 struct ErrorText: View {
     let error: Error?
