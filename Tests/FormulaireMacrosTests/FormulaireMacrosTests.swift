@@ -16,9 +16,33 @@ struct FormulaireMacrosTests {
         assertMacro {
             """
             @Formulaire @Observable
-            final class TestStruct {
-                var x: Int
-                var y: Int
+            final class MyFormObject {
+                var name: String
+                var age: Int
+                var hasCar: Bool
+
+                var addressLine1: String
+                var addressLine2: String
+                var city: String
+                var zipCode: String
+
+                init(
+                    name: String,
+                    age: Int,
+                    hasCar: Bool,
+                    addressLine1: String,
+                    addressLine2: String,
+                    city: String,
+                    zipCode: String
+                ) {
+                    self.name = name
+                    self.age = age
+                    self.hasCar = hasCar
+                    self.addressLine1 = addressLine1
+                    self.addressLine2 = addressLine2
+                    self.city = city
+                    self.zipCode = zipCode
+                }
             }
             """
         } diagnostics: {
@@ -27,16 +51,49 @@ struct FormulaireMacrosTests {
             """
         } expansion: {
             #"""
-            struct TestStruct {
-                var x: Int
-                var y: Int
+            @Observable
+            final class MyFormObject {
+                var name: String
+                var age: Int
+                var hasCar: Bool
 
-                internal static var __allKeyPaths: [PartialKeyPath<Self>] {
-                    [\Self.x, \Self.y]
+                var addressLine1: String
+                var addressLine2: String
+                var city: String
+                var zipCode: String
+
+                init(
+                    name: String,
+                    age: Int,
+                    hasCar: Bool,
+                    addressLine1: String,
+                    addressLine2: String,
+                    city: String,
+                    zipCode: String
+                ) {
+                    self.name = name
+                    self.age = age
+                    self.hasCar = hasCar
+                    self.addressLine1 = addressLine1
+                    self.addressLine2 = addressLine2
+                    self.city = city
+                    self.zipCode = zipCode
+                }
+
+                static var __allFields: [FormulaireField<Self>] {
+                    [
+                        FormulaireField(label: "name", keyPath: \Self.name),
+                                FormulaireField(label: "age", keyPath: \Self.age),
+                                FormulaireField(label: "hasCar", keyPath: \Self.hasCar),
+                                FormulaireField(label: "addressLine1", keyPath: \Self.addressLine1),
+                                FormulaireField(label: "addressLine2", keyPath: \Self.addressLine2),
+                                FormulaireField(label: "city", keyPath: \Self.city),
+                                FormulaireField(label: "zipCode", keyPath: \Self.zipCode)
+                    ]
                 }
             }
 
-            extension TestStruct: Formulaire {
+            extension MyFormObject: Formulaire {
             }
             """#
         }

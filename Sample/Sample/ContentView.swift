@@ -37,16 +37,16 @@ final class MyFormObject {
         self.zipCode = zipCode
     }
 
-//    func validate(errorBuilder: ErrorBuilder<Self>) {
-//        if name.isEmpty {
-//            errorBuilder.addError(POSIXError(.EBADMSG), keyPath: \.name)
-//            errorBuilder.focus(on: \.name)
-//        }
-//    }
+    func validate(checker: FormulaireChecker<MyFormObject>) {
+        if name.isEmpty {
+            checker.addError(POSIXError(.EAFNOSUPPORT), field: \.name)
+            checker.focus(on: \.name)
+        }
+    }
 }
 
 struct ContentView: View {
-    @State var myObject: MyFormObject = .init(
+    @State var object = MyFormObject(
         name: "",
         age: 0,
         hasCar: false,
@@ -57,25 +57,16 @@ struct ContentView: View {
     )
 
     var body: some View {
-        FormulaireView(editing: $myObject) { form in
+        FormulaireView(editing: $object) { form in
             form.textField(for: \.name, label: "Name")
-            form.toggle(for: \.hasCar, label: "Has car?")
-            form.stepper(for: \.age, label: "Age", range: 0...10)
 
             Section {
                 form.textField(for: \.addressLine1, label: "Address line 1")
-                form.textField(for: \.addressLine2, label: "Address line 2")
-                form.textField(for: \.city, label: "City")
-                form.textField(for: \.zipCode, label: "ZIP code")
             }
 
             Section {
-                form.submitButton("Submit") { print("success!") }
+                form.submitButton("Submit", onSubmit: { print("SUCCESS!") })
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
 }

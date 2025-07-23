@@ -4,10 +4,23 @@
 //  Created by Macro Generator.
 //
 
+import Foundation
 import SwiftSyntaxMacros
 import SwiftSyntax
 import SwiftDiagnostics
 import SwiftSyntaxBuilder
+
+struct FormulaireDiagnosticMessage: DiagnosticMessage {
+    let message: String
+    let diagnosticID: MessageID
+    let severity: DiagnosticSeverity
+
+    init(message: String, severity: DiagnosticSeverity = .warning) {
+        self.message = message
+        self.severity = severity
+        self.diagnosticID = MessageID(domain: "FormulaireMacro", id: "FormulaireDiagnostic")
+    }
+}
 
 public struct FormulaireMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
@@ -17,12 +30,25 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
-        // Check if the type already conforms to Formulaire
-        let alreadyConforms = protocols.contains { proto in
-            proto.trimmedDescription == "Formulaire"
+        // Ensure macro is only applied to classes
+        if declaration.as(ClassDeclSyntax.self) == nil {
+            context.diagnose(Diagnostic(
+                node: Syntax(declaration),
+                message: FormulaireDiagnosticMessage(
+                    message: "@Formulaire can only be applied to classes.",
+                    severity: .error
+                )
+            ))
+            return []
         }
 
-        if alreadyConforms {
+        if let inheritanceClause = declaration.inheritanceClause,
+           inheritanceClause.inheritedTypes.contains(
+            where: {
+                ["Formulaire"].contains($0.type.trimmedDescription)
+            }
+           )
+        {
             return []
         }
 
@@ -39,11 +65,43 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         conformingTo: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
+        // Ensure macro is only applied to classes
+        if declaration.as(ClassDeclSyntax.self) == nil {
+            context.diagnose(Diagnostic(
+                node: Syntax(declaration),
+                message: FormulaireDiagnosticMessage(
+                    message: "@Formulaire can only be applied to classes.",
+                    severity: .error
+                )
+            ))
+            return []
+        }
+
         // Determine access level of the attached type
         let accessLevels = ["open", "public", "internal", "private", "fileprivate"]
         let accessLevel = declaration.modifiers.first(where: { mod in
             accessLevels.contains(mod.name.text)
         })?.name.text ?? "internal"
+
+        // Extract the type name from the declaration
+        let typeName: String = (declaration.as(ClassDeclSyntax.self)?.identifier.text) ?? "Self"
+
+        // Check if the type is annotated with @Observable
+        let hasObservable = declaration.attributes.contains { attr in
+            if let attrId = attr.as(AttributeSyntax.self)?.attributeName.as(IdentifierTypeSyntax.self)?.name.text {
+                return attrId == "Observable"
+            }
+            return false
+        }
+        if !hasObservable {
+            context.diagnose(Diagnostic(
+                node: Syntax(declaration),
+                message: FormulaireDiagnosticMessage(
+                    message: "Types using @Formulaire should also be annotated with @Observable.",
+                    severity: .warning
+                )
+            ))
+        }
 
         // Note: If possible, update the inheritance clause of the attached type to add ": Formulaire" if not present.
         // The macro system typically cannot modify the type declaration directly here.
@@ -56,20 +114,27 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
                   !varDecl.modifiers.contains(where: { $0.name.text == "static" || $0.name.text == "class" }) else { return nil }
             return varDecl
         }
-        // Build the array of keyPaths
-        let keyPaths = properties.compactMap { varDecl -> String? in
+        
+        // Build a static property __allFields containing all FormulaireField instances
+        let fields = properties.compactMap { varDecl -> String? in
             guard let binding = varDecl.bindings.first,
-                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else { return nil }
-            return "\\Self." + identifier
-        }
-        let arrayLiteral = "[" + keyPaths.joined(separator: ", ") + "]"
-        let keyPathsDecl = DeclSyntax(stringLiteral:
+                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
+                return nil
+            }
+            // Each property: FormulaireField(label: "name", keyPath: \TypeName.name)
+            return "FormulaireField(label: \"\(identifier)\", keyPath: \\\(typeName).\(identifier))"
+        }.joined(separator: ",\n                ")
+
+        let allFieldsDecl = DeclSyntax(stringLiteral:
             """
-            \(accessLevel) static var __allKeyPaths: [PartialKeyPath<Self>] {
-                \(arrayLiteral)
+            static var __formulaireFields: [FormulaireField<\(typeName)>] {
+                [
+                    \(fields)
+                ]
             }
             """
         )
-        return [keyPathsDecl]
+        return [allFieldsDecl]
     }
 }
+

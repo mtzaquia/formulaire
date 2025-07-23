@@ -11,91 +11,71 @@ import SwiftUI
 @MainActor
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
-
-    public func submitButton(_ label: String, onSubmit: @escaping () -> Void) -> some View {
-        FormulaireMetadataReader<F, _> { metadata, focus in
-            Button(label) {
-                metadata.errorBuilder.clearAllErrors()
-
-                formulaire.validate(errorBuilder: metadata.errorBuilder)
-
-                if !metadata.errorBuilder.hasErrors() {
-                    onSubmit()
-                } else {
-                    focus.wrappedValue = metadata.errorBuilder.nextFocus
-                    metadata.errorBuilder.nextFocus = nil
-                }
-            }
-            .bold()
-        }
-    }
+    @Binding var checker: FormulaireChecker<F>
+    @FocusState.Binding var focus: String?
 }
 
 // MARK: - Views
 
 public extension FormulaireBuilder {
-    func textField(for keyPath: WritableKeyPath<F, String>, label: String) -> some View {
-        FormulaireMetadataReader<F, _> { metadata, focus in
-            VStack(alignment: .leading) {
-                Text(label)
-                TextField(label, text: $formulaire[dynamicMember: keyPath])
-                    .focused(focus, equals: keyPath.debugDescription)
+    func submitButton(_ label: String, onSubmit: @escaping () -> Void) -> some View {
+        Button(label) {
+            checker.clearAllErrors()
 
-                ErrorText(error: metadata.errorBuilder.error(for: keyPath))
+            formulaire.validate(checker: checker)
+
+            if !checker.hasErrors() {
+                onSubmit()
+            } else {
+                focus = checker.getNextFocus()
             }
-            .onAppear {
-                print(keyPath.debugDescription)
-            }
+        }
+        .bold()
+    }
+
+    func textField(for field: WritableKeyPath<F, String>, label: String) -> some View {
+        VStack(alignment: .leading) {
+            Text(label)
+            TextField(label, text: $formulaire[dynamicMember: field])
+                .focused($focus, equals: field.debugDescription)
+
+            ErrorText(error: checker.error(for: field))
         }
     }
 
-    func toggle(for keyPath: WritableKeyPath<F, Bool>, label: String) -> some View {
-        FormulaireMetadataReader { metadata, _ in
-            VStack(alignment: .leading) {
-                Toggle(label, isOn: $formulaire[dynamicMember: keyPath])
+    func toggle(for field: WritableKeyPath<F, Bool>, label: String) -> some View {
+        VStack(alignment: .leading) {
+            Toggle(label, isOn: $formulaire[dynamicMember: field])
 
-                ErrorText(error: metadata.errorBuilder.error(for: keyPath))
-            }
+            ErrorText(error: checker.error(for: field))
         }
     }
 
     func stepper(
-        for keyPath: WritableKeyPath<F, Int>,
+        for field: WritableKeyPath<F, Int>,
         label: String,
         step: Int = 1,
         range: ClosedRange<Int>? = nil
     ) -> some View {
-        FormulaireMetadataReader { metadata, _ in
-            VStack(alignment: .leading) {
-                Stepper(
-                    value: $formulaire[dynamicMember: keyPath].onChange {
-                        guard let range else { return }
-                        formulaire[keyPath: keyPath] = min(max($0, range.lowerBound), range.upperBound)
-                    },
-                    step: step
-                ) {
-                    Text(label)
-                    Text(formulaire[keyPath: keyPath].formatted())
-                        .monospaced()
-                }
-
-                ErrorText(error: metadata.errorBuilder.error(for: keyPath))
+        VStack(alignment: .leading) {
+            Stepper(
+                value: $formulaire[dynamicMember: field].onChange {
+                    guard let range else { return }
+                    formulaire[keyPath: field] = min(max($0, range.lowerBound), range.upperBound)
+                },
+                step: step
+            ) {
+                Text(label)
+                Text(formulaire[keyPath: field].formatted())
+                    .monospaced()
             }
+
+            ErrorText(error: checker.error(for: field))
         }
     }
 }
 
-extension Binding {
-    func onChange(_ handler: @escaping (Value) -> Void) -> Binding<Value> {
-        Binding(
-            get: { self.wrappedValue },
-            set: { newValue in
-                self.wrappedValue = newValue
-                handler(newValue)
-            }
-        )
-    }
-}
+
 
 struct ErrorText: View {
     let error: Error?

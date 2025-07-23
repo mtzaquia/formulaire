@@ -7,47 +7,39 @@
 
 import SwiftUI
 
-extension EnvironmentValues {
-    @Entry var formFocus: FormFocus?
-}
-
 public struct FormulaireView<F: Formulaire, C: View>: View {
     @Binding var object: F
     let builder: (FormulaireBuilder<F>) -> C
 
-    @FocusState private var formFocus: String?
+    @State private var checker: FormulaireChecker<F> = FormulaireChecker<F>()
+    @FocusState private var focus: String?
 
     public var body: some View {
         Form {
-            builder(FormulaireBuilder(formulaire: $object))
-                .environment(FormulaireMetadata<F>())
-                .environment(\.formFocus, $formFocus)
-        }
-        .onAppear {
-            
+            builder(FormulaireBuilder<F>(formulaire: $object, checker: $checker, focus: $focus))
         }
         .toolbar {
             ToolbarItem(placement: .keyboard) {
-                HStack {
-                    Button {
-
-                    } label: {
-                        Label("Previous", systemImage: "chevron.up")
-                    }
-
-                    Button {
-
-                    } label: {
-                        Label("Next", systemImage: "chevron.down")
-                    }
-
-                    Spacer()
-
-                    Button("Done") {
-                        formFocus = nil
-                    }
-                    .bold()
-                }
+                // TODO: Fix navigation. We need to keep track of which keypaths were added to the form. We can
+                // do that with the FormulaireBuilder methods, manipulating a binding from the FormulaireView.
+                KeyboardNavigationView(
+                    onNext: {
+                        let fields = F.__formulaireFields
+                        let length = fields.count
+                        guard let currentIndex = fields.firstIndex(where: { $0.keyPath.debugDescription == focus }) else {
+                            return
+                        }
+                        focus = fields[max(currentIndex + 1, length - 1)].keyPath.debugDescription
+                    },
+                    onPrevious: {
+                        let fields = F.__formulaireFields
+                        guard let currentIndex = fields.firstIndex(where: { $0.keyPath.debugDescription == focus }) else {
+                            return
+                        }
+                        focus = fields[min(currentIndex - 1, 0)].keyPath.debugDescription
+                    },
+                    onDone: { focus = nil }
+                )
             }
         }
     }
