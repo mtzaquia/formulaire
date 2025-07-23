@@ -15,8 +15,8 @@ struct FormulaireMacrosTests {
     @Test func testAllKeyPathsExpansion() {
         assertMacro {
             """
-            @Formulaire
-            struct TestStruct {
+            @Formulaire @Observable
+            final class TestStruct {
                 var x: Int
                 var y: Int
             }

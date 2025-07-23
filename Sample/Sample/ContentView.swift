@@ -8,8 +8,8 @@
 import Formulaire
 import SwiftUI
 
-@Observable
-final class MyFormObject: Formulaire {
+@Formulaire @Observable
+final class MyFormObject {
     var name: String
     var age: Int
     var hasCar: Bool
@@ -37,12 +37,12 @@ final class MyFormObject: Formulaire {
         self.zipCode = zipCode
     }
 
-    func validate(errorBuilder: ErrorBuilder<MyFormObject>) {
-        if name.isEmpty {
-            errorBuilder.addError(POSIXError(.EBADMSG), keyPath: \.name)
-            errorBuilder.focus(on: \.name)
-        }
-    }
+//    func validate(errorBuilder: ErrorBuilder<Self>) {
+//        if name.isEmpty {
+//            errorBuilder.addError(POSIXError(.EBADMSG), keyPath: \.name)
+//            errorBuilder.focus(on: \.name)
+//        }
+//    }
 }
 
 struct ContentView: View {

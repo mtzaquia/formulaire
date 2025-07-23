@@ -11,22 +11,36 @@ import SwiftSyntaxBuilder
 
 public struct FormulaireMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
-        of node: SwiftSyntax.AttributeSyntax,
-        attachedTo declaration: some SwiftSyntax.DeclGroupSyntax,
-        providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol,
-        conformingTo protocols: [SwiftSyntax.TypeSyntax],
-        in context: some SwiftSyntaxMacros.MacroExpansionContext
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
     ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
-        [
+        // Check if the type already conforms to Formulaire
+        let alreadyConforms = protocols.contains { proto in
+            proto.trimmedDescription == "Formulaire"
+        }
+
+        if alreadyConforms {
+            return []
+        }
+
+        return [
             try ExtensionDeclSyntax(
                 "extension \(type.trimmed): Formulaire {}"
             )
         ]
     }
 
-    public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        conformingTo: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
         // Determine access level of the attached type
-        let accessLevels = ["public", "internal", "private", "fileprivate"]
+        let accessLevels = ["open", "public", "internal", "private", "fileprivate"]
         let accessLevel = declaration.modifiers.first(where: { mod in
             accessLevels.contains(mod.name.text)
         })?.name.text ?? "internal"
