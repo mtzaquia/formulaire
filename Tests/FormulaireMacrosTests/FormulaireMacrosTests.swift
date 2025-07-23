@@ -21,15 +21,22 @@ struct FormulaireMacrosTests {
                 var y: Int
             }
             """
+        } diagnostics: {
+            """
+
+            """
         } expansion: {
             #"""
             struct TestStruct {
                 var x: Int
                 var y: Int
 
-                public static var __allKeyPaths: [PartialKeyPath<Self>] {
-                    return [\Self.x, \Self.y]
+                internal static var __allKeyPaths: [PartialKeyPath<Self>] {
+                    [\Self.x, \Self.y]
                 }
+            }
+
+            extension TestStruct: Formulaire {
             }
             """#
         }
