@@ -1,2 +1,11 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
+import Foundation
+import SwiftUI
+
+@MainActor
+public protocol Formulaire: AnyObject, Observable {
+    func validate(errorBuilder: ErrorBuilder<Self>)
+}
+
+public extension Formulaire {
+    func validate(errorBuilder: ErrorBuilder<Self>) {}
+}
