@@ -39,12 +39,12 @@ final class MyFormObject {
 
     func validate(checker: FormulaireChecker<MyFormObject>) {
         if name.isEmpty {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: \.name)
-            checker.focus(on: \.name)
+            checker.addError(POSIXError(.EAFNOSUPPORT), field: .name)
+            checker.focus(on: .name)
         }
 
         if !hasCar {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: \.hasCar)
+            checker.addError(POSIXError(.EAFNOSUPPORT), field: .hasCar)
         }
     }
 }
@@ -62,21 +62,30 @@ struct ContentView: View {
 
     var body: some View {
         FormulaireView(editing: $object) { form in
-            form.textField(for: \.name, label: "Name")
+            Section {
+                form.textField(for: \.name, label: "Name")
+
+                form.toggle(for: \.hasCar, label: "Has car?")
+                
+                form.customControl(for: \.hasCar, focusable: false) { control in
+                    HStack {
+                        Toggle(isOn: control.binding) {
+                            Text("YEAH!")
+                        }
+
+                        Text(control.error?.localizedDescription ?? "NO ERROR!")
+                            .foregroundStyle(control.error == nil ? .black : .red)
+                    }
+                }
+
+                form.stepper(for: \.age, label: "Age")
+            }
 
             Section {
                 form.textField(for: \.addressLine1, label: "Address line 1")
-            }
-
-            form.customControl(for: \.hasCar) { control in
-                HStack {
-                    Toggle(isOn: control.binding) {
-                        Text("YEAH!")
-                    }
-
-                    Text(control.error?.localizedDescription ?? "NO ERROR!")
-                        .foregroundStyle(control.error == nil ? .black : .red)
-                }
+                form.textField(for: \.addressLine2, label: "Address line 2")
+                form.textField(for: \.city, label: "City")
+                form.textField(for: \.zipCode, label: "ZIP")
             }
 
             Section {

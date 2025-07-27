@@ -115,26 +115,39 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             return varDecl
         }
         
-        // Build a static property __allFields containing all FormulaireField instances
-        let fields = properties.compactMap { varDecl -> String? in
+        // Build the nested Fields struct conforming to FieldsProtocol, with Cases enum
+        let fieldsStructProperties = properties.compactMap { varDecl -> String? in
+            guard let binding = varDecl.bindings.first,
+                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
+                  let typeAnnotation = binding.typeAnnotation?.type.description.trimmingCharacters(in: .whitespacesAndNewlines) else {
+                return nil
+            }
+            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: .\(identifier), keyPath: \\\(typeName).\(identifier)) }"
+        }.joined(separator: "\n        ")
+
+        let fieldsEnumCases = properties.compactMap { varDecl -> String? in
             guard let binding = varDecl.bindings.first,
                   let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
                 return nil
             }
-            // Each property: FormulaireField(label: "name", keyPath: \TypeName.name)
-            return "FormulaireField(label: \"\(identifier)\", keyPath: \\\(typeName).\(identifier))"
-        }.joined(separator: ",\n                ")
+            return "case \(identifier)"
+        }.joined(separator: "\n            ")
 
-        let allFieldsDecl = DeclSyntax(stringLiteral:
+        let fieldsStructDecl = DeclSyntax(stringLiteral:
             """
-            static var __formulaireFields: [FormulaireField<\(typeName)>] {
-                [
-                    \(fields)
-                ]
+            struct Fields: FieldsProtocol {
+                enum Cases: String, CaseIterable, Hashable {
+                    \(fieldsEnumCases)
+                }
+                \(fieldsStructProperties)
             }
+            
+            @ObservationIgnored
+            var __fields: Fields = Fields()
             """
         )
-        return [allFieldsDecl]
+        
+
+        return [fieldsStructDecl]
     }
 }
-

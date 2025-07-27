@@ -15,13 +15,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax", from: "601.0.0"),
+        .package(url: "https://github.com/apple/swift-collections.git", from: "1.2.1"),
         .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.6.3")
     ],
     targets: [
         .target(
             name: "Formulaire",
             dependencies: [
-                "FormulaireMacros"
+                "FormulaireMacros",
+                .product(name: "Collections", package: "swift-collections")
             ]
         ),
         .macro(

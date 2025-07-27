@@ -11,20 +11,20 @@ typealias FormFocus = FocusState<String?>.Binding
 
 @Observable
 public final class FormulaireChecker<F: Formulaire> {
-    private var errors: [PartialKeyPath<F>: Error] = [:]
+    private var errors: [F.Fields.Cases: Error] = [:]
 
     @ObservationIgnored
-    var nextFocus: String?
+    var nextFocus: F.Fields.Cases?
 
-    public func addError(_ error: Error, field: PartialKeyPath<F>) {
+    public func addError(_ error: Error, field: F.Fields.Cases) {
         errors[field] = error
     }
 
-    public func focus(on field: PartialKeyPath<F>) {
-        nextFocus = field.debugDescription
+    public func focus(on field: F.Fields.Cases) {
+        nextFocus = field
     }
 
-    func getNextFocus() -> String? {
+    func getNextFocus() -> F.Fields.Cases? {
         defer {
             nextFocus = nil
         }
@@ -40,7 +40,7 @@ public final class FormulaireChecker<F: Formulaire> {
         !errors.values.compactMap(\.self).isEmpty
     }
 
-    func error(for field: PartialKeyPath<F>) -> Error? {
+    func error(for field: F.Fields.Cases) -> Error? {
         errors[field]
     }
 }
