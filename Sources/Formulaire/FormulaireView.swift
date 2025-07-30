@@ -17,37 +17,64 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
     @FocusState private var focus: F.Fields.Cases?
 
     public var body: some View {
-        Form {
-            builder(
-                FormulaireBuilder<F>(
-                    formulaire: $object,
-                    checker: $checker,
-                    focus: $focus // ,
-//                    formulaireTracker: tracker
+        ScrollViewReader { proxy in
+            Form {
+                builder(
+                    FormulaireBuilder<F>(
+                        formulaire: $object,
+                        checker: $checker,
+                        focus: $focus
+                    )
                 )
-            )
-        }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                // TODO: Fix navigation. We need to keep track of which keypaths were added to the form. We can
-                // do that with the FormulaireBuilder methods, manipulating a binding from the FormulaireView.
-                KeyboardNavigationView(
-                    onNext: {
-                        guard let currentIndex = focus.flatMap(fields.firstIndex(of:)),
-                              currentIndex + 1 < fields.count
-                        else { return }
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button(
+                        action: {
+                            let currentIndex = focus.flatMap(fields.firstIndex(of:))
+                            guard let currentIndex, currentIndex - 1 >= 0 else { return }
 
-                        focus = fields[currentIndex + 1]
-                    },
-                    onPrevious: {
-                        guard let currentIndex = focus.flatMap(fields.firstIndex(of:)),
-                              currentIndex - 1 >= 0
-                        else { return }
+                            let fieldToFocus = fields[currentIndex - 1]
+                            proxy.scrollTo(fieldToFocus, anchor: .top)
 
-                        focus = fields[currentIndex - 1]
-                    },
-                    onDone: { focus = nil }
-                )
+                            DispatchQueue.main.async {
+                                focus = fieldToFocus
+                            }
+                        },
+                        label: {
+                            Label("Previous", systemImage: "chevron.up")
+                        }
+                    )
+
+                    Button(
+                        action: {
+                            guard let currentIndex = focus.flatMap(fields.firstIndex(of:)),
+                                  currentIndex + 1 < fields.count
+                            else { return }
+
+                            let fieldToFocus = fields[currentIndex + 1]
+                            proxy.scrollTo(fieldToFocus, anchor: .bottom)
+
+                            DispatchQueue.main.async {
+                                focus = fieldToFocus
+                            }
+                        },
+                        label: {
+                            Label("Next", systemImage: "chevron.down")
+                        }
+                    )
+
+                    Color.clear.frame(maxWidth: .infinity)
+
+                    Button(
+                        action: { focus = nil },
+                        label: {
+                            Label("Done", systemImage: "checkmark")
+                                .labelStyle(.iconOnly)
+                        }
+                    )
+                    .bold()
+                }
             }
         }
         .onPreferenceChange(PresencePreferenceKey.self) {

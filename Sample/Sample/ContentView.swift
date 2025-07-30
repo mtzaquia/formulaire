@@ -14,6 +14,8 @@ final class MyFormObject {
     var age: Int
     var hasCar: Bool
 
+    var emails: [String]
+
     var addressLine1: String
     var addressLine2: String
     var city: String
@@ -23,6 +25,7 @@ final class MyFormObject {
         name: String,
         age: Int,
         hasCar: Bool,
+        emails: [String],
         addressLine1: String,
         addressLine2: String,
         city: String,
@@ -31,6 +34,7 @@ final class MyFormObject {
         self.name = name
         self.age = age
         self.hasCar = hasCar
+        self.emails = emails
         self.addressLine1 = addressLine1
         self.addressLine2 = addressLine2
         self.city = city
@@ -54,6 +58,7 @@ struct ContentView: View {
         name: "",
         age: 0,
         hasCar: false,
+        emails: [],
         addressLine1: "",
         addressLine2: "",
         city: "",
@@ -66,7 +71,11 @@ struct ContentView: View {
                 form.textField(for: \.name, label: "Name")
 
                 form.toggle(for: \.hasCar, label: "Has car?")
-                
+
+                Section {
+                    form.textFields(for: \.emails, label: "Emails")
+                }
+
                 form.customControl(for: \.hasCar, focusable: false) { control in
                     HStack {
                         Toggle(isOn: control.binding) {
