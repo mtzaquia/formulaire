@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+extension String: @retroactive LocalizedError {
+    public var errorDescription: String? { self }
+}
+
 @main
 struct SampleApp: App {
     var body: some Scene {

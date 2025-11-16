@@ -21,4 +21,6 @@ final class Address {
         self.city = city
         self.zipCode = zipCode
     }
+
+    func validate() {}
 }

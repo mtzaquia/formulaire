@@ -114,35 +114,25 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             return varDecl
         }
         
-        // Build the nested Fields struct conforming to FieldsProtocol, with Cases enum
+        // Build the nested Fields struct conforming to FieldsProtocol, with properties referencing string labels directly
         let fieldsStructProperties = properties.compactMap { varDecl -> String? in
             guard let binding = varDecl.bindings.first,
                   let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
                   let typeAnnotation = binding.typeAnnotation?.type.description.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 return nil
             }
-            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: Cases.\(identifier), keyPath: \\\(typeName).\(identifier)) }"
+            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: \"\(identifier)\", keyPath: \\\(typeName).\(identifier)) }"
         }.joined(separator: "\n        ")
-
-        let fieldsEnumCases = properties.compactMap { varDecl -> String? in
-            guard let binding = varDecl.bindings.first,
-                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
-                return nil
-            }
-            return "case \(identifier)"
-        }.joined(separator: "\n            ")
 
         let fieldsStructDecl = DeclSyntax(stringLiteral:
             """
-            struct Fields: FieldsProtocol {
-                enum Cases: String, CaseIterable, Hashable {
-                    \(fieldsEnumCases)
-                }
+            struct Fields {
                 \(fieldsStructProperties)
             }
             
             @ObservationIgnored
             static var __fields: Fields = Fields()
+            var __validator = Validator<\(typeName)>()
             """
         )
         
@@ -150,3 +140,4 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         return [fieldsStructDecl]
     }
 }
+

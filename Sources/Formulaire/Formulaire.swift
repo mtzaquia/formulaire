@@ -1,22 +1,26 @@
 import Foundation
 import SwiftUI
 
-@attached(member, names: named(Fields), named(__fields))
+@attached(member, names: named(Fields), named(__fields), named(__validator))
 @attached(extension, conformances: Formulaire)
 public macro Formulaire() = #externalMacro(module: "FormulaireMacros", type: "FormulaireMacro")
 
-public protocol FieldsProtocol {
-    associatedtype Cases: Hashable
-}
+//public protocol FieldsProtocol {
+//    associatedtype Cases: Hashable
+//}
 
 public protocol Formulaire: AnyObject {
-    associatedtype Fields: FieldsProtocol
+    associatedtype Fields // FieldsProtocol
 
-    func validate(checker: FormulaireChecker<Fields>)
+    func validate()
 
     static var __fields: Fields { get }
+    var __validator: Validator<Self> { get }
 }
 
 public extension Formulaire {
-    func validate(checker: FormulaireChecker<Fields>) {}
+    func addError<V>(_ error: Error, for field: FieldPath<Self, V>) {
+        let concreteField = Self.__fields[keyPath: field]
+        __validator.errors[concreteField.label] = error
+    }
 }

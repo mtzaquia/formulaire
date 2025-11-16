@@ -11,9 +11,7 @@ import SwiftUI
 public struct FormulaireView<F: Formulaire, C: View>: View {
     @Binding var object: F
     let builder: (FormulaireBuilder<F>) -> C
-
-    @State private var checker = FormulaireChecker<F.Fields>()
-    @FocusState private var focus: F.Fields.Cases?
+    @FocusState private var focus: String?
 
     public var body: some View {
         ScrollViewReader { proxy in
@@ -21,7 +19,6 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                 builder(
                     FormulaireBuilder<F>(
                         formulaire: $object,
-                        checker: $checker,
                         focus: $focus
                     )
                 )

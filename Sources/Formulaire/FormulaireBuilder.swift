@@ -11,15 +11,14 @@ import SwiftUI
 @MainActor
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
-    @Binding var checker: FormulaireChecker<F.Fields>
-    @FocusState.Binding var focus: F.Fields.Cases?
+    @FocusState.Binding var focus: String?
 }
 
 @MainActor
 public struct ControlBuilder<F: Formulaire, V> {
-    public var label: F.Fields.Cases
+    public var label: String
     @Binding public var value: V
-    @FocusState.Binding public var focus: F.Fields.Cases?
+    @FocusState.Binding public var focus: String?
     public var error: Error?
 
     var isFocused: Bool {
@@ -38,14 +37,13 @@ public extension FormulaireBuilder {
         content: (ControlBuilder<F, V>) -> Content
     ) -> some View {
         let concreteField = F.__fields[keyPath: field]
-        let error = checker.error(for: concreteField.label)
 
         return content(
             ControlBuilder(
                 label: concreteField.label,
                 value: $formulaire[dynamicMember: concreteField.keyPath],
                 focus: $focus,
-                error: checker.error(for: concreteField.label)
+                error: formulaire.__validator.errors[concreteField.label]
             )
         )
         .id(concreteField.label)
@@ -53,15 +51,16 @@ public extension FormulaireBuilder {
 
     func submitButton(_ label: String, onSubmit: @escaping () -> Void) -> some View {
         Button(label) {
-            checker.clearAllErrors()
+            formulaire.__validator.clearAllErrors()
 
-            formulaire.validate(checker: checker)
+            formulaire.validate()
 
-            if !checker.hasErrors() {
+            if !formulaire.__validator.hasErrors() {
                 onSubmit()
-            } else {
-                focus = checker.getNextFocus()
             }
+//            else {
+//                focus = checker.getNextFocus()
+//            }
         }
         .bold()
     }

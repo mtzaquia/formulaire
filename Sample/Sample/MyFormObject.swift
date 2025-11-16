@@ -9,7 +9,7 @@ import Foundation
 import Formulaire
 
 @Observable @Formulaire
-final class MyFormObject: Formulaire {
+final class MyFormObject {
     var name: String
     var age: Int
     var hasCar: Bool
@@ -27,16 +27,15 @@ final class MyFormObject: Formulaire {
         self.address = address
     }
 
-    func validate(checker: FormulaireChecker<Fields>) {
+    func validate() {
         if name.isEmpty {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: .name)
-            checker.focus(on: .name)
+            addError("Name is required", for: \.name)
         }
 
         if !hasCar {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: .hasCar)
+            addError("Needs car", for: \.hasCar)
         }
 
-        //        address.validate(checker: checker.nested(for: \.address))
+        addError("Address line 1 is invalid", for: \.address.addressLine1)
     }
 }
