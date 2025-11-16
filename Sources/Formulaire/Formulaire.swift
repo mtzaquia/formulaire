@@ -6,16 +6,17 @@ import SwiftUI
 public macro Formulaire() = #externalMacro(module: "FormulaireMacros", type: "FormulaireMacro")
 
 public protocol FieldsProtocol {
-    associatedtype Cases: CaseIterable, Hashable
+    associatedtype Cases: Hashable
 }
 
 public protocol Formulaire: AnyObject {
-    func validate(checker: FormulaireChecker<Self>)
-
     associatedtype Fields: FieldsProtocol
+
+    func validate(checker: FormulaireChecker<Fields>)
+
     static var __fields: Fields { get }
 }
 
 public extension Formulaire {
-    func validate(checker: FormulaireChecker<Self>) {}
+    func validate(checker: FormulaireChecker<Fields>) {}
 }

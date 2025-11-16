@@ -10,26 +10,26 @@ import SwiftUI
 typealias FormFocus = FocusState<String?>.Binding
 
 @Observable
-public final class FormulaireChecker<F: Formulaire> {
-    public func nested<N: Formulaire>(for field: FieldPath<F, N>) -> FormulaireChecker<N> {
-        let concreteField = F.__fields[keyPath: field]
-        return FormulaireChecker<N>()
-    }
+public final class FormulaireChecker<Field: FieldsProtocol> {
+//    public func nested<N: Formulaire>(for field: FieldPath<F, N>) -> FormulaireChecker<N> {
+//        let concreteField = F.__fields[keyPath: field]
+//        return FormulaireChecker<N>()
+//    }
 
-    private var errors: [F.Fields.Cases: Error] = [:]
+    private var errors: [Field.Cases: Error] = [:]
 
     @ObservationIgnored
-    var nextFocus: F.Fields.Cases?
+    var nextFocus: Field.Cases?
 
-    public func addError(_ error: Error, field: F.Fields.Cases) {
+    public func addError(_ error: Error, field: Field.Cases) {
         errors[field] = error
     }
 
-    public func focus(on field: F.Fields.Cases) {
+    public func focus(on field: Field.Cases) {
         nextFocus = field
     }
 
-    func getNextFocus() -> F.Fields.Cases? {
+    func getNextFocus() -> Field.Cases? {
         defer {
             nextFocus = nil
         }
@@ -45,7 +45,7 @@ public final class FormulaireChecker<F: Formulaire> {
         !errors.values.compactMap(\.self).isEmpty
     }
 
-    func error(for field: F.Fields.Cases) -> Error? {
+    func error(for field: Field.Cases) -> Error? {
         errors[field]
     }
 }

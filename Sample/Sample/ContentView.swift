@@ -8,54 +8,6 @@
 import Formulaire
 import SwiftUI
 
-@Observable @Formulaire
-final class MyFormObject {
-    var name: String
-    var age: Int
-    var hasCar: Bool
-    var address: Address
-
-    init(
-        name: String,
-        age: Int,
-        hasCar: Bool,
-        address: Address
-    ) {
-        self.name = name
-        self.age = age
-        self.hasCar = hasCar
-        self.address = address
-    }
-
-    func validate(checker: FormulaireChecker<MyFormObject>) {
-        if name.isEmpty {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: .name)
-            checker.focus(on: .name)
-        }
-
-        if !hasCar {
-            checker.addError(POSIXError(.EAFNOSUPPORT), field: .hasCar)
-        }
-
-        address.validate(checker: checker.nested(for: \.address))
-    }
-}
-
-@Observable @Formulaire
-final class Address {
-    var addressLine1: String
-    var addressLine2: String
-    var city: String
-    var zipCode: String
-
-    init(addressLine1: String, addressLine2: String, city: String, zipCode: String) {
-        self.addressLine1 = addressLine1
-        self.addressLine2 = addressLine2
-        self.city = city
-        self.zipCode = zipCode
-    }
-}
-
 struct ContentView: View {
     @State var object = MyFormObject(
         name: "",

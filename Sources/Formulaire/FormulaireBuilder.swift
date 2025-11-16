@@ -11,8 +11,7 @@ import SwiftUI
 @MainActor
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
-    @Binding var checker: FormulaireChecker<F>
-    @Binding var tracker: FieldTracker<F>
+    @Binding var checker: FormulaireChecker<F.Fields>
     @FocusState.Binding var focus: F.Fields.Cases?
 }
 

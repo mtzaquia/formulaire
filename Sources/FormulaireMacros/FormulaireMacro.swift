@@ -30,7 +30,6 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
-        // Ensure macro is only applied to classes
         if declaration.as(ClassDeclSyntax.self) == nil {
             context.diagnose(Diagnostic(
                 node: Syntax(declaration),
