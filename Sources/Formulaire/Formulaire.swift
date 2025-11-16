@@ -5,12 +5,8 @@ import SwiftUI
 @attached(extension, conformances: Formulaire)
 public macro Formulaire() = #externalMacro(module: "FormulaireMacros", type: "FormulaireMacro")
 
-//public protocol FieldsProtocol {
-//    associatedtype Cases: Hashable
-//}
-
 public protocol Formulaire: AnyObject {
-    associatedtype Fields // FieldsProtocol
+    associatedtype Fields
 
     func validate()
 
