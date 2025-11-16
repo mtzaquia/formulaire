@@ -17,9 +17,7 @@ public struct FormulaireField<F: Formulaire, V>: Hashable {
         self.keyPath = keyPath
     }
 
-    public subscript<T>(dynamicMember keyPath: FieldPath<V, T>) -> FormulaireField<F, T>
-    where V: Formulaire
-    {
+    public subscript<T>(dynamicMember keyPath: FieldPath<V, T>) -> FormulaireField<F, T> where V: Formulaire {
         let nested = V.__fields[keyPath: keyPath]
         return FormulaireField<F, T>(
             label: [self.label, nested.label].joined(separator: "."),

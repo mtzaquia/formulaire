@@ -22,5 +22,9 @@ final class Address {
         self.zipCode = zipCode
     }
 
-    func validate() {}
+    func validate() {
+        if addressLine1.isEmpty {
+            addError("Address line 1 is required", for: \.addressLine1)
+        }
+    }
 }

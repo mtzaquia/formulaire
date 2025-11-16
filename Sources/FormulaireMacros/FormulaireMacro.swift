@@ -135,7 +135,6 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             var __validator = Validator<\(typeName)>()
             """
         )
-        
 
         return [fieldsStructDecl]
     }
