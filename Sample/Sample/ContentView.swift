@@ -8,37 +8,23 @@
 import Formulaire
 import SwiftUI
 
-@Formulaire @Observable
+@Observable @Formulaire
 final class MyFormObject {
     var name: String
     var age: Int
     var hasCar: Bool
-
-    var emails: [String]
-
-    var addressLine1: String
-    var addressLine2: String
-    var city: String
-    var zipCode: String
+    var address: Address
 
     init(
         name: String,
         age: Int,
         hasCar: Bool,
-        emails: [String],
-        addressLine1: String,
-        addressLine2: String,
-        city: String,
-        zipCode: String
+        address: Address
     ) {
         self.name = name
         self.age = age
         self.hasCar = hasCar
-        self.emails = emails
-        self.addressLine1 = addressLine1
-        self.addressLine2 = addressLine2
-        self.city = city
-        self.zipCode = zipCode
+        self.address = address
     }
 
     func validate(checker: FormulaireChecker<MyFormObject>) {
@@ -50,6 +36,23 @@ final class MyFormObject {
         if !hasCar {
             checker.addError(POSIXError(.EAFNOSUPPORT), field: .hasCar)
         }
+
+        address.validate(checker: checker.nested(for: \.address))
+    }
+}
+
+@Observable @Formulaire
+final class Address {
+    var addressLine1: String
+    var addressLine2: String
+    var city: String
+    var zipCode: String
+
+    init(addressLine1: String, addressLine2: String, city: String, zipCode: String) {
+        self.addressLine1 = addressLine1
+        self.addressLine2 = addressLine2
+        self.city = city
+        self.zipCode = zipCode
     }
 }
 
@@ -58,11 +61,12 @@ struct ContentView: View {
         name: "",
         age: 0,
         hasCar: false,
-        emails: [],
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        zipCode: ""
+        address: .init(
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            zipCode: ""
+        )
     )
 
     var body: some View {
@@ -72,18 +76,14 @@ struct ContentView: View {
 
                 form.toggle(for: \.hasCar, label: "Has car?")
 
-                Section {
-                    form.textFields(for: \.emails, label: "Emails")
-                }
-
-                form.customControl(for: \.hasCar, focusable: false) { control in
+                form.control(for: \.hasCar, focusable: false) { builder in
                     HStack {
-                        Toggle(isOn: control.binding) {
+                        Toggle(isOn: builder.$value) {
                             Text("YEAH!")
                         }
 
-                        Text(control.error?.localizedDescription ?? "NO ERROR!")
-                            .foregroundStyle(control.error == nil ? .black : .red)
+                        Text(builder.error?.localizedDescription ?? "NO ERROR!")
+                            .foregroundStyle(builder.error == nil ? .black : .red)
                     }
                 }
 
@@ -91,10 +91,30 @@ struct ContentView: View {
             }
 
             Section {
-                form.textField(for: \.addressLine1, label: "Address line 1")
-                form.textField(for: \.addressLine2, label: "Address line 2")
-                form.textField(for: \.city, label: "City")
-                form.textField(for: \.zipCode, label: "ZIP")
+                Text("Yola")
+            }
+
+            Section {
+                Text("Yole")
+            }
+
+            Section {
+                Text("Yoli")
+            }
+
+            Section {
+                Text("Yoli")
+            }
+
+            Section {
+                Text("Yolu")
+            }
+
+            Section {
+                form.textField(for: \.address.addressLine1, label: "Address line 1")
+                form.textField(for: \.address.addressLine2, label: "Address line 2")
+                form.textField(for: \.address.city, label: "City")
+                form.textField(for: \.address.zipCode, label: "ZIP")
             }
 
             Section {

@@ -11,6 +11,11 @@ typealias FormFocus = FocusState<String?>.Binding
 
 @Observable
 public final class FormulaireChecker<F: Formulaire> {
+    public func nested<N: Formulaire>(for field: FieldPath<F, N>) -> FormulaireChecker<N> {
+        let concreteField = F.__fields[keyPath: field]
+        return FormulaireChecker<N>()
+    }
+
     private var errors: [F.Fields.Cases: Error] = [:]
 
     @ObservationIgnored

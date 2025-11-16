@@ -12,14 +12,20 @@ import SwiftUI
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
     @Binding var checker: FormulaireChecker<F>
+    @Binding var tracker: FieldTracker<F>
     @FocusState.Binding var focus: F.Fields.Cases?
 }
 
 @MainActor
 public struct ControlBuilder<F: Formulaire, V> {
-    public var binding: Binding<V>
+    public var label: F.Fields.Cases
+    @Binding public var value: V
     @FocusState.Binding public var focus: F.Fields.Cases?
-    public let error: Error?
+    public var error: Error?
+
+    var isFocused: Bool {
+        focus == label
+    }
 }
 
 // MARK: - Views
@@ -27,6 +33,25 @@ public struct ControlBuilder<F: Formulaire, V> {
 public typealias FieldPath<F: Formulaire, V> = KeyPath<F.Fields, FormulaireField<F, V>>
 
 public extension FormulaireBuilder {
+    func control<V, Content: View>(
+        for field: FieldPath<F, V>,
+        focusable: Bool,
+        content: (ControlBuilder<F, V>) -> Content
+    ) -> some View {
+        let concreteField = F.__fields[keyPath: field]
+        let error = checker.error(for: concreteField.label)
+
+        return content(
+            ControlBuilder(
+                label: concreteField.label,
+                value: $formulaire[dynamicMember: concreteField.keyPath],
+                focus: $focus,
+                error: checker.error(for: concreteField.label)
+            )
+        )
+        .id(concreteField.label)
+    }
+
     func submitButton(_ label: String, onSubmit: @escaping () -> Void) -> some View {
         Button(label) {
             checker.clearAllErrors()
@@ -43,36 +68,34 @@ public extension FormulaireBuilder {
     }
 
     func textField(for field: FieldPath<F, String>, label: String) -> some View {
-        let concreteField = formulaire.__fields[keyPath: field]
-        let error = checker.error(for: concreteField.label)
-        return VStack(alignment: .leading) {
-            Text(label)
-                .foregroundStyle(
-                    error != nil ? AnyShapeStyle(.red) : (
-                        focus == concreteField.label ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+        control(for: field, focusable: true) { builder in
+            VStack(alignment: .leading) {
+                Text(label)
+                    .foregroundStyle(
+                        builder.error != nil ? AnyShapeStyle(.red) : (
+                            builder.isFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+                        )
                     )
-                )
-                .font(.caption.bold())
-                .textCase(.uppercase)
-            TextField(label, text: $formulaire[dynamicMember: concreteField.keyPath], prompt: Text("Enter \(label)"))
-                .focused($focus, equals: concreteField.label)
+                    .font(.caption.bold())
+                    .textCase(.uppercase)
+                TextField(label, text: builder.$value, prompt: Text("Enter \(label)"))
+                    .focused(builder.$focus, equals: builder.label)
 
-            ErrorText(error: error)
+                ErrorText(error: builder.error)
+            }
         }
-        .preference(key: PresencePreferenceKey.self, value: [AnyHashable(concreteField.label)])
     }
 
     func toggle(for field: FieldPath<F, Bool>, label: String) -> some View {
-        let concreteField = formulaire.__fields[keyPath: field]
-        let error = checker.error(for: concreteField.label)
+        control(for: field, focusable: true) { builder in
+            VStack(alignment: .leading) {
+                Toggle(isOn: builder.$value) {
+                    Text(label)
+                        .foregroundStyle(builder.error != nil ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                }
 
-        return VStack(alignment: .leading) {
-            Toggle(isOn: $formulaire[dynamicMember: concreteField.keyPath]) {
-                Text(label)
-                    .foregroundStyle(error != nil ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                ErrorText(error: builder.error)
             }
-
-            ErrorText(error: error)
         }
     }
 
@@ -82,40 +105,24 @@ public extension FormulaireBuilder {
         step: Int = 1,
         range: ClosedRange<Int>? = nil
     ) -> some View {
-        let concreteField = formulaire.__fields[keyPath: field]
+        control(for: field, focusable: true) { builder in
+            VStack(alignment: .leading) {
+                Stepper(
+                    value: builder.$value,
+                    step: step
+                ) {
+                    Text(label)
+                    Text(builder.value.formatted())
+                        .monospaced()
+                }
 
-        return VStack(alignment: .leading) {
-            Stepper(
-                value: $formulaire[dynamicMember: concreteField.keyPath].onChange {
-                    guard let range else { return }
-                    formulaire[keyPath: concreteField.keyPath] = min(max($0, range.lowerBound), range.upperBound)
-                },
-                step: step
-            ) {
-                Text(label)
-                Text(formulaire[keyPath: concreteField.keyPath].formatted())
-                    .monospaced()
+                ErrorText(error: builder.error)
             }
-
-            ErrorText(error: checker.error(for: concreteField.label))
+            .onChange(of: builder.value) { _, new in
+                guard let range else { return }
+                builder.value = min(max(new, range.lowerBound), range.upperBound)
+            }
         }
-    }
-
-    func customControl<V, C: View>(
-        for field: FieldPath<F, V>,
-        focusable: Bool = false,
-        @ViewBuilder controlBuilder: (ControlBuilder<F, V>) -> C
-    ) -> some View {
-        let concreteField = formulaire.__fields[keyPath: field]
-
-        return controlBuilder(
-            ControlBuilder(
-                binding: $formulaire[dynamicMember: concreteField.keyPath],
-                focus: $focus,
-                error: checker.error(for: concreteField.label)
-            )
-        )
-        .preference(key: PresencePreferenceKey.self, value: focusable ? [AnyHashable(concreteField.label)] : [])
     }
 }
 

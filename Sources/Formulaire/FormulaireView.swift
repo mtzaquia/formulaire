@@ -8,12 +8,37 @@
 import Collections
 import SwiftUI
 
+@Observable @MainActor
+public final class FieldTracker<F: Formulaire> {
+    @ObservationIgnored
+    var present = OrderedSet<F.Fields.Cases>() {
+        didSet {
+            print(present)
+        }
+    }
+
+    init() {}
+}
+
+//public struct FieldTrackerReader<F: Formulaire, C: View>: View {
+//    @Environment(FieldTracker<F>.self) private var fieldTracker
+//    let builder: (FieldTracker<F>) -> C
+//
+//    public var body: some View {
+//        builder(fieldTracker)
+//    }
+//
+//    init(@ViewBuilder _ builder: @escaping (FieldTracker<F>) -> C) {
+//        self.builder = builder
+//    }
+//}
+
 public struct FormulaireView<F: Formulaire, C: View>: View {
     @Binding var object: F
     let builder: (FormulaireBuilder<F>) -> C
 
     @State private var checker: FormulaireChecker<F> = FormulaireChecker<F>()
-    @State private var fields: OrderedSet<F.Fields.Cases> = []
+    @State private var tracker: FieldTracker = FieldTracker<F>()
     @FocusState private var focus: F.Fields.Cases?
 
     public var body: some View {
@@ -23,65 +48,64 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                     FormulaireBuilder<F>(
                         formulaire: $object,
                         checker: $checker,
+                        tracker: $tracker,
                         focus: $focus
                     )
                 )
             }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
-                    Button(
-                        action: {
-                            let currentIndex = focus.flatMap(fields.firstIndex(of:))
-                            guard let currentIndex, currentIndex - 1 >= 0 else { return }
+                    Group {
+                        Button(
+                            action: {
+                                let currentIndex = focus.flatMap(tracker.present.firstIndex(of:))
+                                guard let currentIndex, currentIndex - 1 >= 0 else { return }
 
-                            let fieldToFocus = fields[currentIndex - 1]
-                            proxy.scrollTo(fieldToFocus, anchor: .top)
+                                let fieldToFocus = tracker.present[currentIndex - 1]
 
-                            DispatchQueue.main.async {
-                                focus = fieldToFocus
+                                proxy.scrollTo(fieldToFocus, anchor: .top)
+                                DispatchQueue.main.async {
+                                    focus = fieldToFocus
+                                }
+                            },
+                            label: {
+                                Label("Previous", systemImage: "chevron.up")
                             }
-                        },
-                        label: {
-                            Label("Previous", systemImage: "chevron.up")
-                        }
-                    )
+                        )
 
-                    Button(
-                        action: {
-                            guard let currentIndex = focus.flatMap(fields.firstIndex(of:)),
-                                  currentIndex + 1 < fields.count
-                            else { return }
+                        Button(
+                            action: {
+                                guard let currentIndex = focus.flatMap(tracker.present.firstIndex(of:)),
+                                      currentIndex + 1 < tracker.present.count
+                                else { return }
 
-                            let fieldToFocus = fields[currentIndex + 1]
-                            proxy.scrollTo(fieldToFocus, anchor: .bottom)
+                                let fieldToFocus = tracker.present[currentIndex + 1]
+                                proxy.scrollTo(fieldToFocus, anchor: .bottom)
 
-                            DispatchQueue.main.async {
-                                focus = fieldToFocus
+                                DispatchQueue.main.async {
+                                    focus = fieldToFocus
+                                }
+                            },
+                            label: {
+                                Label("Next", systemImage: "chevron.down")
                             }
-                        },
-                        label: {
-                            Label("Next", systemImage: "chevron.down")
-                        }
-                    )
+                        )
 
-                    Color.clear.frame(maxWidth: .infinity)
+                        Color.clear.frame(maxWidth: .infinity)
 
-                    Button(
-                        action: { focus = nil },
-                        label: {
-                            Label("Done", systemImage: "checkmark")
-                                .labelStyle(.iconOnly)
-                        }
-                    )
-                    .bold()
+                        Button(
+                            action: { focus = nil },
+                            label: {
+                                Label("Done", systemImage: "checkmark")
+                                    .labelStyle(.iconOnly)
+                            }
+                        )
+                        .bold()
+                    }
                 }
             }
         }
-        .onPreferenceChange(PresencePreferenceKey.self) {
-            let casted = $0?.compactMap { $0.base as? F.Fields.Cases } ?? []
-            fields = OrderedSet(casted)
-            print(fields)
-        }
+//        .environment(tracker)
     }
 
     public init(

@@ -122,7 +122,7 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
                   let typeAnnotation = binding.typeAnnotation?.type.description.trimmingCharacters(in: .whitespacesAndNewlines) else {
                 return nil
             }
-            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: .\(identifier), keyPath: \\\(typeName).\(identifier)) }"
+            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: Cases.\(identifier), keyPath: \\\(typeName).\(identifier)) }"
         }.joined(separator: "\n        ")
 
         let fieldsEnumCases = properties.compactMap { varDecl -> String? in
@@ -143,7 +143,7 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             }
             
             @ObservationIgnored
-            var __fields: Fields = Fields()
+            static var __fields: Fields = Fields()
             """
         )
         
