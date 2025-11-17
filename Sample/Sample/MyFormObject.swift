@@ -36,6 +36,8 @@ final class MyFormObject {
             addError("Needs car", for: \.hasCar)
         }
 
+        validate(\.address)
+
 //        if address.addressLine1.isEmpty {
 //            addError("Address line 1 is required", for: \.address.addressLine1)
 //        }

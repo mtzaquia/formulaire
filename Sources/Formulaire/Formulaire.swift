@@ -13,10 +13,3 @@ public protocol Formulaire: AnyObject {
     static var __fields: Fields { get }
     var __validator: Validator<Self> { get }
 }
-
-public extension Formulaire {
-    func addError<V>(_ error: Error, for field: FieldPath<Self, V>) {
-        let concreteField = Self.__fields[keyPath: field]
-        __validator.errors[concreteField.label] = error
-    }
-}
