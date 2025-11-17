@@ -11,9 +11,10 @@ public typealias FieldPath<F: Formulaire, V> = KeyPath<F.Fields, FormulaireField
 
 @dynamicMemberLookup
 public struct FormulaireField<F: Formulaire, V>: Hashable {
-    public let label: String
-    public let keyPath: WritableKeyPath<F, V>
+    let label: String
+    let keyPath: WritableKeyPath<F, V>
 
+    /// **[Internal use]** You do not instantiate this type directly.
     public init(label: String, keyPath: WritableKeyPath<F, V>) {
         self.label = label
         self.keyPath = keyPath

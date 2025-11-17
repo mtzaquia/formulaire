@@ -20,7 +20,7 @@ public struct ControlBuilder<F: Formulaire, V> {
     @FocusState.Binding public var focus: String?
     public var error: Error?
 
-    var isFocused: Bool {
+    public var isFocused: Bool {
         focus == label
     }
 }
