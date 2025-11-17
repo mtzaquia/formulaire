@@ -23,6 +23,12 @@
 import SwiftUI
 
 public extension FormulaireBuilder {
+    /// Builds a control for editing one of the fields from the subject.
+    ///
+    /// - Parameters:
+    ///   - field: The field path that is to be mutated in the subject.
+    ///   - focusable: A flag indicating whether this control should be part of the focus system.
+    ///   - content: The view for the control, built using a ``ControlBuilder``.
     func control<V, Content: View>(
         for field: FieldPath<F, V>,
         focusable: Bool,
@@ -45,15 +51,25 @@ public extension FormulaireBuilder {
         .id(concreteField.label)
     }
 
+    /// Builds a submit button for the form.
+    ///
+    /// - Parameters:
+    ///   - label: The button label.
+    ///   - onSubmit: The action to be taken if the form is successfuly validated.
     func submitButton(_ label: String, onSubmit: @escaping () -> Void) -> some View {
         Button(label) {
-            if !validate() {
+            if validate() {
                 onSubmit()
             }
         }
         .bold()
     }
 
+    /// Builds a text field for editing textual fields.
+    ///
+    /// - Parameters:
+    ///   - field: The field path that is to be mutated in the subject.
+    ///   - label: The user-facing label for the field.
     func textField(for field: FieldPath<F, String>, label: String) -> some View {
         control(for: field, focusable: true) { builder in
             VStack(alignment: .leading) {
@@ -73,6 +89,11 @@ public extension FormulaireBuilder {
         }
     }
 
+    /// Builds a toggle for editing boolean fields.
+    ///
+    /// - Parameters:
+    ///   - field: The field path that is to be mutated in the subject.
+    ///   - label: The user-facing label for the field.
     func toggle(for field: FieldPath<F, Bool>, label: String) -> some View {
         control(for: field, focusable: false) { builder in
             VStack(alignment: .leading) {
@@ -86,6 +107,13 @@ public extension FormulaireBuilder {
         }
     }
 
+    /// Builds a stepper for editing numberic fields without decimals.
+    ///
+    /// - Parameters:
+    ///   - field: The field path that is to be mutated in the subject.
+    ///   - label: The user-facing label for the field.
+    ///   - step: The amount by the which the value changes when up or down are pressed. Defaults to 1.
+    ///   - range: The allowed range for the number. Optional.
     func stepper(
         for field: FieldPath<F, Int>,
         label: String,
@@ -110,6 +138,21 @@ public extension FormulaireBuilder {
                 builder.value = min(max(new, range.lowerBound), range.upperBound)
             }
         }
+    }
+
+    /// Allows the user to build a visual content on the form for nested formulaire subjects, while conveniently providing
+    /// collected errors for that particular subject.
+    ///
+    /// - Parameters:
+    ///   - field: The field path that is to be mutated in the subject.
+    ///   - content: The view to be displayed, built with a provided list of errors matching the field.
+    func content<N: Formulaire, Content: View>(
+        for field: FieldPath<F, N>,
+        @ViewBuilder content: (_ errors: [String: Error]) -> Content
+    ) -> some View {
+        let concreteField = F.__fields[keyPath: field]
+
+        return content(formulaire.__validator.errors.filter { key, _ in key.contains("\(concreteField.label).") })
     }
 }
 

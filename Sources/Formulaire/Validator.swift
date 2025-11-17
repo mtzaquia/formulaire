@@ -70,7 +70,9 @@ public extension Formulaire {
         let concreteField = Self.__fields[keyPath: nested]
         let target = self[keyPath: concreteField.keyPath]
 
+        target.__validator.clearAllErrors()
         target.__validator.parent = concreteField.label
+
         target.validate()
 
         __validator.errors.merge(target.__validator.errors, uniquingKeysWith: { _, new in new })

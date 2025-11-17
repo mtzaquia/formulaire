@@ -38,11 +38,19 @@ public struct FormulaireBuilder<F: Formulaire> {
 }
 
 public struct ControlBuilder<F: Formulaire, V> {
+    /// The user-facing label provided while building the view.
     public var label: String
+
+    /// A binding to the value for this particular field, which can be used in native components.
     @Binding public var value: V
+
+    /// A binding for focus, so fields can hook into the focus system.
     @FocusState.Binding public var focus: String?
+
+    /// A property holding the error for this field, if any exist.
     public var error: Error?
 
+    /// A flag indicating whether this field is currently focused, for convenience.
     public var isFocused: Bool {
         focus == label
     }
