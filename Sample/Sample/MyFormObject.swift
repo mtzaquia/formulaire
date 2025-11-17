@@ -16,6 +16,9 @@ final class MyFormObject {
     var licensePlate: String
     var address: Address
 
+    var computedProperty: String { "Can't be used because it's computed" }
+    let readOnlyProperty: String = "Can't be used because it's `let`"
+
     init(
         name: String,
         age: Int,

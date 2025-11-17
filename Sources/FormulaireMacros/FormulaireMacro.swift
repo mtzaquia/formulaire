@@ -97,7 +97,7 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
                 node: Syntax(declaration),
                 message: FormulaireDiagnosticMessage(
                     message: "Types using @Formulaire should also be annotated with @Observable.",
-                    severity: .warning
+                    severity: .error
                 )
             ))
         }
@@ -106,22 +106,55 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         // The macro system typically cannot modify the type declaration directly here.
         // This would require a separate macro or a different approach.
 
-        // Collect all stored properties
+        // Collect writable stored properties (exclude computed properties and immutable lets)
         let properties = declaration.memberBlock.members.compactMap { member -> VariableDeclSyntax? in
-            guard let varDecl = member.decl.as(VariableDeclSyntax.self),
-                  varDecl.bindings.count == 1,
-                  !varDecl.modifiers.contains(where: { $0.name.text == "static" || $0.name.text == "class" }) else { return nil }
+            guard let varDecl = member.decl.as(VariableDeclSyntax.self) else { return nil }
+
+            // Exclude static/class properties
+            if varDecl.modifiers.contains(where: { $0.name.text == "static" || $0.name.text == "class" }) {
+                return nil
+            }
+
+            // Only consider `var` declarations (skip `let`)
+            if varDecl.bindingSpecifier.tokenKind != .keyword(.var) {
+                return nil
+            }
+
+            // We only support exactly one binding per declaration for now
+            guard varDecl.bindings.count == 1, let binding = varDecl.bindings.first else { return nil }
+
+            // Exclude computed properties: they have an accessor block without `set`
+            if let accessorBlock = binding.accessorBlock {
+                switch accessorBlock.accessors {
+                case .accessors(let list):
+                    // If there is a setter, it's writable; otherwise it's read-only computed
+                    let hasSetter = list.contains(where: { accessor in
+                        if case .keyword(let keyword) = accessor.accessorSpecifier.tokenKind {
+                            return keyword == .set
+                        }
+                        return false
+                    })
+                    if !hasSetter { return nil }
+                case .getter:
+                    // Explicit getter-only
+                    return nil
+                }
+            }
+
+            // If there is no accessor block, it's a stored property (writable by default for `var`)
             return varDecl
         }
         
-        // Build the nested Fields struct conforming to FieldsProtocol, with properties referencing string labels directly
         let fieldsStructProperties = properties.compactMap { varDecl -> String? in
             guard let binding = varDecl.bindings.first,
-                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
-                  let typeAnnotation = binding.typeAnnotation?.type.description.trimmingCharacters(in: .whitespacesAndNewlines) else {
+                  let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {
                 return nil
             }
-            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: \"\(identifier)\", keyPath: \\\(typeName).\(identifier)) }"
+            // Require a type annotation to generate a proper field type
+            guard let typeAnnotation = binding.typeAnnotation?.type.description.trimmingCharacters(in: .whitespacesAndNewlines), !typeAnnotation.isEmpty else {
+                return nil
+            }
+            return "var \(identifier): FormulaireField<\(typeName), \(typeAnnotation)> { FormulaireField(label: \"\(identifier)\", keyPath: \\\((typeName)).\(identifier)) }"
         }.joined(separator: "\n        ")
 
         let fieldsStructDecl = DeclSyntax(stringLiteral:
