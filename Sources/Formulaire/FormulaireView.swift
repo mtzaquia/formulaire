@@ -5,7 +5,6 @@
 //  Created by Mauricio Tremea Zaquia on 22/07/2025.
 //
 
-import Collections
 import SwiftUI
 
 final class Wrapper<T> {
@@ -16,15 +15,11 @@ final class Wrapper<T> {
     }
 }
 
-extension EnvironmentValues {
-    @Entry var renderedFields: Wrapper<[String]>?
-}
-
 public struct FormulaireView<F: Formulaire, C: View>: View {
-    @Binding var subject: F
-    let builder: (FormulaireBuilder<F>) -> C
+    @Binding private var subject: F
     @FocusState private var focus: String?
 
+    private let builder: (FormulaireBuilder<F>) -> C
     private let renderedFields: Wrapper<[String]> = .init(value: [])
 
     public var body: some View {
