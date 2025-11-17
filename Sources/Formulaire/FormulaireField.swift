@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias FieldPath<F: Formulaire, V> = KeyPath<F.Fields, FormulaireField<F, V>>
+
 @dynamicMemberLookup
 public struct FormulaireField<F: Formulaire, V>: Hashable {
     public let label: String

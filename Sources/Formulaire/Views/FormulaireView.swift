@@ -34,6 +34,8 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                         renderedFields: renderedFields
                     )
                 )
+
+                let _ = print(renderedFields.value)
             }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
