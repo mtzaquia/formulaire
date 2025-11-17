@@ -13,17 +13,20 @@ final class MyFormObject {
     var name: String
     var age: Int
     var hasCar: Bool
+    var licensePlate: String
     var address: Address
 
     init(
         name: String,
         age: Int,
         hasCar: Bool,
+        licensePlate: String,
         address: Address
     ) {
         self.name = name
         self.age = age
         self.hasCar = hasCar
+        self.licensePlate = licensePlate
         self.address = address
     }
 
@@ -32,8 +35,8 @@ final class MyFormObject {
             addError("Name is required", for: \.name)
         }
 
-        if !hasCar {
-            addError("Needs car", for: \.hasCar)
+        if hasCar, licensePlate.isEmpty {
+            addError("Needs license plate", for: \.licensePlate)
         }
 
         validate(\.address)

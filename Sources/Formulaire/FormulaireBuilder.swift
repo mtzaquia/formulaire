@@ -12,6 +12,7 @@ import SwiftUI
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
     @FocusState.Binding var focus: String?
+    let renderedFields: Wrapper<[String]>
 }
 
 @MainActor
@@ -38,6 +39,10 @@ public extension FormulaireBuilder {
     ) -> some View {
         let concreteField = F.__fields[keyPath: field]
 
+        if focusable {
+            renderedFields.value.append(concreteField.label)
+        }
+
         return content(
             ControlBuilder(
                 label: concreteField.label,
@@ -58,9 +63,6 @@ public extension FormulaireBuilder {
             if !formulaire.__validator.hasErrors() {
                 onSubmit()
             }
-//            else {
-//                focus = checker.getNextFocus()
-//            }
         }
         .bold()
     }
@@ -85,7 +87,7 @@ public extension FormulaireBuilder {
     }
 
     func toggle(for field: FieldPath<F, Bool>, label: String) -> some View {
-        control(for: field, focusable: true) { builder in
+        control(for: field, focusable: false) { builder in
             VStack(alignment: .leading) {
                 Toggle(isOn: builder.$value) {
                     Text(label)
@@ -103,7 +105,7 @@ public extension FormulaireBuilder {
         step: Int = 1,
         range: ClosedRange<Int>? = nil
     ) -> some View {
-        control(for: field, focusable: true) { builder in
+        control(for: field, focusable: false) { builder in
             VStack(alignment: .leading) {
                 Stepper(
                     value: builder.$value,

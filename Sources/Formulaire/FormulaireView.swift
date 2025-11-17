@@ -8,18 +8,35 @@
 import Collections
 import SwiftUI
 
+final class Wrapper<T> {
+    var value: T
+
+    init(value: T) {
+        self.value = value
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var renderedFields: Wrapper<[String]>?
+}
+
 public struct FormulaireView<F: Formulaire, C: View>: View {
-    @Binding var object: F
+    @Binding var subject: F
     let builder: (FormulaireBuilder<F>) -> C
     @FocusState private var focus: String?
+
+    private let renderedFields: Wrapper<[String]> = .init(value: [])
 
     public var body: some View {
         ScrollViewReader { proxy in
             Form {
+                let _ = renderedFields.value.removeAll()
+
                 builder(
                     FormulaireBuilder<F>(
-                        formulaire: $object,
-                        focus: $focus
+                        formulaire: $subject,
+                        focus: $focus,
+                        renderedFields: renderedFields
                     )
                 )
             }
@@ -27,21 +44,45 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                 ToolbarItemGroup(placement: .keyboard) {
                     Group {
                         Button(
-                            action: {
+                            action: { [fields = renderedFields.value] in
+                                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
+                                else { return }
 
+                                if currentIndex - 1 >= 0 {
+                                    let previous = fields[currentIndex - 1]
+                                    withAnimation(.snappy) {
+                                        proxy.scrollTo(previous)
+                                    }
+
+                                    focus = previous
+                                }
                             },
                             label: {
                                 Label("Previous", systemImage: "chevron.up")
                             }
                         )
+                        .disabled(focus.flatMap({ renderedFields.value.firstIndex(of: $0) }) == 0)
 
                         Button(
-                            action: {
+                            action: { [fields = renderedFields.value] in
+                                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
+                                else { return }
 
+                                if currentIndex + 1 < fields.count {
+                                    let next = fields[currentIndex + 1]
+                                    withAnimation(.snappy) {
+                                        proxy.scrollTo(next)
+                                    }
+
+                                    focus = next
+                                }
                             },
                             label: {
                                 Label("Next", systemImage: "chevron.down")
                             }
+                        )
+                        .disabled(
+                            focus.flatMap({ renderedFields.value.firstIndex(of: $0) }) == renderedFields.value.count - 1
                         )
 
                         Color.clear.frame(maxWidth: .infinity)
@@ -61,10 +102,10 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
     }
 
     public init(
-        editing object: Binding<F>,
+        editing subject: Binding<F>,
         @ViewBuilder builder: @escaping (FormulaireBuilder<F>) -> C
     ) {
-        self._object = object
+        self._subject = subject
         self.builder = builder
     }
 }

@@ -13,6 +13,7 @@ struct ContentView: View {
         name: "",
         age: 0,
         hasCar: false,
+        licensePlate: "",
         address: .init(
             addressLine1: "",
             addressLine2: "",
@@ -28,15 +29,18 @@ struct ContentView: View {
 
                 form.toggle(for: \.hasCar, label: "Has car?")
 
-                form.control(for: \.hasCar, focusable: false) { builder in
-                    HStack {
-                        Toggle(isOn: builder.$value) {
-                            Text("YEAH!")
-                        }
-
-                        Text(builder.error?.localizedDescription ?? "NO ERROR!")
-                            .foregroundStyle(builder.error == nil ? .black : .red)
-                    }
+                if object.hasCar {
+//                    form.control(for: \.hasCar, focusable: false) { builder in
+//                        HStack {
+//                            Toggle(isOn: builder.$value) {
+//                                Text("YEAH!")
+//                            }
+//
+//                            Text(builder.error?.localizedDescription ?? "NO ERROR!")
+//                                .foregroundStyle(builder.error == nil ? .black : .red)
+//                        }
+//                    }
+                    form.textField(for: \.licensePlate, label: "License plate")
                 }
 
                 form.stepper(for: \.age, label: "Age")
