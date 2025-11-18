@@ -22,25 +22,48 @@
 
 import Foundation
 
+/// An indirect reference for the key path of a ``Formulaire`` field.
 public typealias FieldPath<F: Formulaire, V> = KeyPath<F.Fields, FormulaireField<F, V>>
 
+/// An abstraction of a formulaire field for a given proeprty of a ``Formulaire`` subject.
 @dynamicMemberLookup
-public struct FormulaireField<F: Formulaire, V>: Hashable {
+public struct FormulaireField<Root, Value>: Hashable {
     let label: String
-    let keyPath: WritableKeyPath<F, V>
+    let keyPath: WritableKeyPath<Root, Value>
 
     /// **[Internal use]** You do not instantiate this type directly.
-    public init(label: String, keyPath: WritableKeyPath<F, V>) {
+    public init(label: String, keyPath: WritableKeyPath<Root, Value>) {
         self.label = label
         self.keyPath = keyPath
     }
 
-    public subscript<T>(dynamicMember keyPath: FieldPath<V, T>) -> FormulaireField<F, T> where V: Formulaire {
-        let nested = V.__fields[keyPath: keyPath]
-        return FormulaireField<F, T>(
+    public subscript<Nested>(
+        dynamicMember keyPath: KeyPath<Value.Fields, FormulaireField<Value, Nested>>
+    ) -> FormulaireField<Root, Nested> where Value: Formulaire {
+        let nested = Value.__fields[keyPath: keyPath]
+        return FormulaireField<Root, Nested>(
             label: [self.label, nested.label].joined(separator: "."),
             keyPath: self.keyPath.appending(path: nested.keyPath)
         )
     }
+
+    public subscript<Nested, Wrapped>(
+        dynamicMember keyPath: KeyPath<Wrapped.Fields, FormulaireField<Wrapped, Nested>>
+    ) -> FormulaireField<Root, Nested> where Value == Optional<Wrapped>, Wrapped: Formulaire {
+        let nested = Wrapped.__fields[keyPath: keyPath]
+        let composed = self.keyPath
+            .appending(path: \Wrapped?.forceUnwrapped)
+            .appending(path: nested.keyPath)
+        return FormulaireField<Root, Nested>(
+            label: [self.label, nested.label].joined(separator: "."),
+            keyPath: composed
+        )
+    }
 }
 
+private extension Optional {
+    var forceUnwrapped: Wrapped {
+        get { self! }
+        set { self = newValue }
+    }
+}

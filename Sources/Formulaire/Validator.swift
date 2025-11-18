@@ -69,12 +69,29 @@ public extension Formulaire {
     func validate<F: Formulaire>(_ nested: FieldPath<Self, F>) {
         let concreteField = Self.__fields[keyPath: nested]
         let target = self[keyPath: concreteField.keyPath]
+        __validator._validateNested(target, parent: concreteField.label)
+    }
 
-        target.__validator.clearAllErrors()
-        target.__validator.parent = concreteField.label
+    /// Validates a nested ``Formulaire`` type while validating your current subject.
+    ///
+    /// - Note: You can also validate nested subjects using ``addError(_:for:)``, using nested key paths. The benefit of this function is that
+    /// validation logic can be reused across subjects.
+    ///
+    /// - Parameter nested: The field of the nested subject that is to be validated.
+    func validate<F: Formulaire>(_ nested: FieldPath<Self, Optional<F>>) {
+        let concreteField = Self.__fields[keyPath: nested]
+        guard let target = self[keyPath: concreteField.keyPath] else { return }
+        __validator._validateNested(target, parent: concreteField.label)
+    }
+}
 
-        target.validate()
+private extension Validator {
+    func _validateNested<N: Formulaire>(_ nested: N, parent: String) {
+        nested.__validator.clearAllErrors()
+        nested.__validator.parent = parent
 
-        __validator.errors.merge(target.__validator.errors, uniquingKeysWith: { _, new in new })
+        nested.validate()
+
+        errors.merge(nested.__validator.errors, uniquingKeysWith: { _, new in new })
     }
 }

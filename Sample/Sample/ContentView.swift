@@ -75,7 +75,7 @@ struct ContentView: View {
             }
 
             Section {
-                Text("Yoli")
+                Text("Yolo")
             }
 
             Section {

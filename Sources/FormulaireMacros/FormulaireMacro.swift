@@ -99,7 +99,7 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
         })?.name.text ?? "internal"
 
         // Extract the type name from the declaration
-        let typeName: String = (declaration.as(ClassDeclSyntax.self)?.identifier.text) ?? "Self"
+        let typeName: String = (declaration.as(ClassDeclSyntax.self)?.name.text) ?? "Self"
 
         // Check if the type is annotated with @Observable
         let hasObservable = declaration.attributes.contains { attr in
@@ -175,13 +175,13 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
 
         let fieldsStructDecl = DeclSyntax(stringLiteral:
             """
-            struct Fields {
+            \(accessLevel) struct Fields {
                 \(fieldsStructProperties)
             }
             
             @ObservationIgnored
-            static var __fields: Fields = Fields()
-            var __validator = Validator<\(typeName)>()
+            \(accessLevel) static var __fields: Fields = Fields()
+            \(accessLevel) var __validator = Validator<\(typeName)>()
             """
         )
 
