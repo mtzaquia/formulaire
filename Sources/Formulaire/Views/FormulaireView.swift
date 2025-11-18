@@ -49,65 +49,44 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                         renderedFields: renderedFields
                     )
                 )
-
-                let _ = print(renderedFields.value)
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Group {
-                        Button(
-                            action: { [fields = renderedFields.value] in
-                                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
-                                else { return }
-
-                                if currentIndex - 1 >= 0 {
-                                    let previous = fields[currentIndex - 1]
-                                    withAnimation(.snappy) {
-                                        proxy.scrollTo(previous)
-                                    }
-
-                                    focus = previous
+            .modify { base in
+                let info = Bundle.main.infoDictionary
+                if #available(iOS 26, *), (info?["UIDesignRequiresCompatibility"] as? Bool) != true {
+                    base
+                        .safeAreaBar(edge: .bottom) {
+                            if focus != nil {
+                                HStack {
+                                    previousButton(proxy: proxy)
+                                        .frame(width: 34, height: 40)
+                                    nextButton(proxy: proxy)
+                                        .frame(width: 34, height: 40)
+                                    Spacer(minLength: .zero)
+                                    doneButton(.iconOnly)
+                                        .frame(width: 34, height: 40)
                                 }
-                            },
-                            label: {
-                                Label("Previous", systemImage: "chevron.up")
+                                .font(.title2)
+                                .padding(.horizontal, 4)
+                                .frame(height: 48)
+                                .glassEffect(.clear.interactive())
+                                .padding([.horizontal, .bottom])
+                                .tint(.primary)
+                                .transition(.blurReplace)
                             }
-                        )
-                        .disabled(focus.flatMap({ renderedFields.value.firstIndex(of: $0) }) == 0)
-
-                        Button(
-                            action: { [fields = renderedFields.value] in
-                                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
-                                else { return }
-
-                                if currentIndex + 1 < fields.count {
-                                    let next = fields[currentIndex + 1]
-                                    withAnimation(.snappy) {
-                                        proxy.scrollTo(next)
-                                    }
-
-                                    focus = next
+                        }
+                } else {
+                    base
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                HStack {
+                                    previousButton(proxy: proxy)
+                                    nextButton(proxy: proxy)
+                                    Color.clear.frame(maxWidth: .infinity)
+                                    doneButton(.titleOnly)
+                                        .bold()
                                 }
-                            },
-                            label: {
-                                Label("Next", systemImage: "chevron.down")
                             }
-                        )
-                        .disabled(
-                            focus.flatMap({ renderedFields.value.firstIndex(of: $0) }) == renderedFields.value.count - 1
-                        )
-
-                        Color.clear.frame(maxWidth: .infinity)
-
-                        Button(
-                            action: { focus = nil },
-                            label: {
-                                Label("Done", systemImage: "checkmark")
-                                    .labelStyle(.iconOnly)
-                            }
-                        )
-                        .bold()
-                    }
+                        }
                 }
             }
         }
@@ -119,5 +98,69 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
     ) {
         self._subject = subject
         self.builder = builder
+    }
+}
+
+private extension FormulaireView {
+    private func previousButton(proxy: ScrollViewProxy) -> some View {
+        Button(
+            action: {
+                let fields = renderedFields.value
+                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
+                else { return }
+
+                if currentIndex - 1 >= 0 {
+                    let previous = fields[currentIndex - 1]
+                    proxy.scrollTo(previous)
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        focus = previous
+                    }
+                }
+            },
+            label: {
+                Label(LocalizedStringResource(stringLiteral: "Previous"), systemImage: "chevron.up")
+                    .labelStyle(.iconOnly)
+                    .contentShape(Rectangle())
+            }
+        )
+        .disabled(focus == renderedFields.value.first)
+    }
+
+    private func nextButton(proxy: ScrollViewProxy) -> some View {
+        Button(
+            action: {
+                let fields = renderedFields.value
+                guard let currentIndex = focus.flatMap({ fields.firstIndex(of: $0) })
+                else { return }
+
+                if currentIndex + 1 < fields.count {
+                    let next = fields[currentIndex + 1]
+                    proxy.scrollTo(next)
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        focus = next
+                    }
+                }
+            },
+            label: {
+                Label(LocalizedStringResource(stringLiteral: "Next"), systemImage: "chevron.down")
+                    .labelStyle(.iconOnly)
+                    .contentShape(Rectangle())
+            }
+        )
+        .disabled(focus == renderedFields.value.last)
+    }
+
+    @ViewBuilder
+    private func doneButton(_ labelStyle: some LabelStyle) -> some View {
+        Button(
+            action: {
+                focus = nil
+            },
+            label: {
+                Label(LocalizedStringResource(stringLiteral: "Done"), systemImage: "checkmark")
+                    .labelStyle(labelStyle)
+                    .contentShape(Rectangle())
+            }
+        )
     }
 }
