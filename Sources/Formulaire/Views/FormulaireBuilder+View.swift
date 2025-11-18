@@ -42,7 +42,7 @@ public extension FormulaireBuilder {
 
         return content(
             ControlBuilder(
-                label: concreteField.label,
+                id: concreteField.label,
                 value: $formulaire[dynamicMember: concreteField.keyPath],
                 focus: $focus,
                 error: formulaire.__validator.errors[concreteField.label]
@@ -82,7 +82,7 @@ public extension FormulaireBuilder {
                     .font(.caption.bold())
                     .textCase(.uppercase)
                 TextField(label, text: builder.$value, prompt: Text("Enter \(label)"))
-                    .focused(builder.$focus, equals: builder.label)
+                    .focused(builder.$focus, equals: builder.id)
 
                 ErrorText(error: builder.error)
             }
