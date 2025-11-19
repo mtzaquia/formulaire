@@ -69,43 +69,43 @@ import Formulaire
 import SwiftUI
 
 struct SignUpView: View {
-    @State private var form = SignUpForm()
+  @State private var form = SignUpForm()
 
-    var body: some View {
-        FormulaireView(editing: $form) { form in
-            form.textField(for: \.firstName, label: "First name")
-            form.textField(for: \.lastName, label: "Last name")
-            form.stepper(for: \.age, label: "Age", step: 1, range: 0...120)
-            
-            form.content(for: \.preferences) { error in 
-                Section {
-                    ForEach(invoice.preferences) { preference in
-                        let scoped = form.scope(\.preferences, for: preference)
-                        scoped.toggle(for: \.isEnabled, label: preference.name)
-                    }
-                } footer: {
-                    if let error {
-                        Text(error.localizedDescription)
-                    }
-                }
-            }
-            
-            // Use a default submit button...
-            form.submitButton("Create Account") {
-                // Handle success
-                print("Submitted")
-            }
-
-            // ... or handle it with your own logic.
-            Button("Done!") { 
-                let success = form.validate()
-                if success {
-                    // handle success
-                }
-            }
+  var body: some View {
+    FormulaireView(editing: $form) { form in
+      form.textField(for: \.firstName, label: "First name")
+      form.textField(for: \.lastName, label: "Last name")
+      form.stepper(for: \.age, label: "Age", step: 1, range: 0...120)
+      
+      form.content(for: \.preferences) { error in 
+        Section {
+          ForEach(invoice.preferences) { preference in
+            let scoped = form.scope(\.preferences, for: preference)
+            scoped.toggle(for: \.isEnabled, label: preference.name)
+          }
+        } footer: {
+          if let error {
+            Text(error.localizedDescription)
+          }
         }
-        .padding()
+      }
+      
+      // Use a default submit button...
+      form.submitButton("Create Account") {
+        // Handle success
+        print("Submitted")
+      }
+
+      // ... or handle it with your own logic.
+      Button("Done!") { 
+        let success = form.validate()
+        if success {
+          // handle success
+        }
+      }
     }
+    .padding()
+  }
 }
 ```
 
