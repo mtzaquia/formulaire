@@ -29,41 +29,57 @@ public typealias FieldPath<F: Formulaire, V> = KeyPath<F.Fields, FormulaireField
 @dynamicMemberLookup
 public struct FormulaireField<Root, Value>: Hashable {
     let label: String
-    let keyPath: WritableKeyPath<Root, Value>
+    let get: (Root) -> Value
+    let set: (Root, Value) -> Void
 
     /// **[Internal use]** You do not instantiate this type directly.
-    public init(label: String, keyPath: WritableKeyPath<Root, Value>) {
+    public init(label: String, keyPath: ReferenceWritableKeyPath<Root, Value>) {
         self.label = label
-        self.keyPath = keyPath
+        self.get = { root in root[keyPath: keyPath] }
+        self.set = { root, newValue in root[keyPath: keyPath] = newValue }
+    }
+
+    init(label: String, get: @escaping (Root) -> Value, set: @escaping (Root, Value) -> Void) {
+        self.label = label
+        self.get = get
+        self.set = set
     }
 
     public subscript<Nested>(
-        dynamicMember keyPath: KeyPath<Value.Fields, FormulaireField<Value, Nested>>
+        dynamicMember fieldPath: FieldPath<Value, Nested>
     ) -> FormulaireField<Root, Nested> where Value: Formulaire {
-        let nested = Value.__fields[keyPath: keyPath]
+        let nested = Value.__fields[keyPath: fieldPath]
         return FormulaireField<Root, Nested>(
             label: [self.label, nested.label].joined(separator: "."),
-            keyPath: self.keyPath.appending(path: nested.keyPath)
+            get: { root in
+                nested.get(get(root))
+            },
+            set: { root, newValue in
+                var parent = get(root)
+                nested.set(parent, newValue)
+                set(root, parent)
+            }
         )
     }
 
-    public subscript<Nested, Wrapped>(
-        dynamicMember keyPath: KeyPath<Wrapped.Fields, FormulaireField<Wrapped, Nested>>
-    ) -> FormulaireField<Root, Nested> where Value == Optional<Wrapped>, Wrapped: Formulaire {
-        let nested = Wrapped.__fields[keyPath: keyPath]
-        let composed = self.keyPath
-            .appending(path: \Wrapped?.forceUnwrapped)
-            .appending(path: nested.keyPath)
-        return FormulaireField<Root, Nested>(
-            label: [self.label, nested.label].joined(separator: "."),
-            keyPath: composed
-        )
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(label)
     }
 }
 
-private extension Optional {
-    var forceUnwrapped: Wrapped {
-        get { self! }
-        set { self = newValue }
+public func == <R, V>(lhs: FormulaireField<R, V>, rhs: FormulaireField<R, V>) -> Bool {
+    lhs.label == rhs.label
+}
+
+extension Formulaire {
+    subscript<V>(field field: FormulaireField<Self, V>) -> V {
+        get {
+            field.get(self)
+        }
+        set {
+            field.set(self, newValue)
+        }
     }
 }
+

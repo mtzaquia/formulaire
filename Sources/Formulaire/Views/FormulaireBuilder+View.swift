@@ -32,7 +32,7 @@ public extension FormulaireBuilder {
     func control<V, Content: View>(
         for field: FieldPath<F, V>,
         focusable: Bool,
-        content: (ControlBuilder<F, V>) -> Content
+        @ViewBuilder content: (ControlBuilder<F, V>) -> Content
     ) -> some View {
         let concreteField = F.__fields[keyPath: field]
 
@@ -43,7 +43,7 @@ public extension FormulaireBuilder {
         return content(
             ControlBuilder(
                 id: concreteField.label,
-                value: $formulaire[dynamicMember: concreteField.keyPath],
+                value: $formulaire[field: concreteField],
                 focus: $focus,
                 error: formulaire.__validator.errors[concreteField.label]
             )

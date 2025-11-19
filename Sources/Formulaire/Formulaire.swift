@@ -30,7 +30,7 @@ public macro Formulaire() = #externalMacro(module: "FormulaireMacros", type: "Fo
 
 /// The protocol allowing a class to be used as the subject of a ``FormulaireView``.
 /// - Important: You don't confirm to this protocol directly, instead, use the ``Formulaire()`` macro.
-public protocol Formulaire: AnyObject {
+public protocol Formulaire {
     /// A function implementing validation logic for this subject.
     ///
     /// You can use ``addError(_:for:)`` to tag fields with errors, and/or ``validate(_:)`` on nested subjects to reuse their individual validation logic.
@@ -57,6 +57,14 @@ public protocol Formulaire: AnyObject {
     /// **[Internal use]** You do not interact with this property directly.
     static var __fields: Fields { get }
 
+    associatedtype Concrete: Formulaire
+
     /// **[Internal use]** You do not interact with this property directly.
-    var __validator: Validator<Self> { get }
+    var __validator: Validator<Concrete> { get }
+}
+
+extension Optional: Formulaire where Wrapped: Formulaire, Wrapped.Concrete == Wrapped {
+    public static var __fields: Wrapped.Fields { Wrapped.__fields }
+    public var __validator: Validator<Wrapped> { self?.__validator ?? Validator<Wrapped>() }
+    public func validate() { self?.validate() }
 }

@@ -31,7 +31,13 @@ extension String: @retroactive LocalizedError {
 struct SampleApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TabView {
+                ContentView()
+                InvoiceForm()
+                    .tabItem {
+                        Label("Invoice", systemImage: "text.document")
+                    }
+            }
         }
     }
 }
