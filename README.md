@@ -19,25 +19,44 @@ dependencies: [
 Annotate your form model class with `@Observable` and `@Formulaire`, and provide a `validate()` method. Leave it empty for no validation.
 
 ```swift
-import Observation
 import Formulaire
 
 @Observable @Formulaire
 final class SignUpForm {
-    var firstName: String = ""
-    var lastName: String = ""
-    var age: Int = 18
-    var wantsNewsletter: Bool = true
+  var firstName: String = ""
+  var lastName: String = ""
+  var age: Int = 18
+  var preferences: IdentifiedArrayOf<Preference> = [
+    Preference("News about cats", isEnabled: false),
+    Preference("News about dogs", isEnabled: false)
+  ]
 
-    func validate() {
-        if firstName.isEmpty {
-            addError(MissingRequiredField(), for: \.firstName)
-        }
-
-        if lastName.isEmpty {
-            addError(MissingRequiredField(), for: \.lastName)
-        }
+  func validate() {
+    if firstName.isEmpty {
+      addError(MissingRequiredFieldError(), for: \.firstName)
     }
+
+    if lastName.isEmpty {
+      addError(MissingRequiredFieldError(), for: \.lastName)
+    }
+    
+    if preferences.count(where: { $0.isEnabled }) == .zero {
+      addError(AtLeastOneError(), for: \.preferences)
+    }
+    
+    // This would validate the `Preference` type using its `validate()` function.
+    // validate(\.preferences)
+  }
+}
+
+@Observable @Formulaire
+final class Preference {
+  var name: String
+  var isEnabled: Bool
+  
+  func validate() {
+    // Compose validation of complex models by breaking them down, like here.
+  }
 }
 ```
 
@@ -57,8 +76,20 @@ struct SignUpView: View {
             form.textField(for: \.firstName, label: "First name")
             form.textField(for: \.lastName, label: "Last name")
             form.stepper(for: \.age, label: "Age", step: 1, range: 0...120)
-            form.toggle(for: \.wantsNewsletter, label: "Receive updates?")
-
+            
+            form.content(for: \.preferences) { error in 
+                Section {
+                    ForEach(invoice.preferences) { preference in
+                        let scoped = form.scope(\.preferences, for: preference)
+                        scoped.toggle(for: \.isEnabled, label: preference.name)
+                    }
+                } footer: {
+                    if let error {
+                        Text(error.localizedDescription)
+                    }
+                }
+            }
+            
             // Use a default submit button...
             form.submitButton("Create Account") {
                 // Handle success

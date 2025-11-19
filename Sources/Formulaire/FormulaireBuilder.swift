@@ -39,6 +39,29 @@ public struct FormulaireBuilder<F: Formulaire> {
         return !formulaire.__validator.hasErrors()
     }
 
+    /// Scopes the builder to a given subject from a list of subjects, allowing you to nest fields inline.
+    ///
+    /// Most of the time, you should be using this helper whenever dealing with a list of subjects, in combination with `ForEach` when building your form.
+    ///
+    /// ```swift
+    /// Section {
+    ///   ForEach(purchase.items) { item in
+    ///     let scoped = form.scope(\.items, for: item)
+    ///     scoped.textField(for: \.summary, label: "Summary")
+    ///   }
+    ///   .onDelete { offsets in
+    ///     purchase.items.remove(atOffsets: offsets) // delete as usual.
+    ///   }
+    ///
+    ///   Button("Add") {
+    ///     purchase.items.append(.init()) // add new rows by appending to the subject as usual.
+    ///   }
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - field: The list field in which the builder should be scoped to.
+    ///   - child: The child the scoped builder will operate on.
     public func scope<S: Formulaire & Identifiable>(_ field: FieldPath<F, IdentifiedArrayOf<S>>, for child: S) -> FormulaireBuilder<S> {
         let concreteField = F.__fields[keyPath: field]
 
