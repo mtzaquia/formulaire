@@ -2,6 +2,8 @@
 
 A lightweight Swift library for building validated, focus-aware forms using Swift macros and SwiftUI. Formulaire provides helpers to render controls, manage focus, and surface validation errors.
 
+![Simulator Screen Recording - iPhone 17 Pro - 2025-11-19 at 15 30 01](https://github.com/user-attachments/assets/8b6b8ec9-d37a-466a-9a96-df7a06ecfe4f)
+
 ## Instalation
 
 Formulaire is available via Swift Package Manager, and requires `Swift 6.2`.
