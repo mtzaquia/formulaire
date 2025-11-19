@@ -20,7 +20,6 @@
 //  SOFTWARE.
 //
 
-import Foundation
 import SwiftUI
 
 @attached(member, names: named(Fields), named(__fields), named(__validator))

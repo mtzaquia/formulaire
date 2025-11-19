@@ -38,6 +38,16 @@ struct FormulaireDiagnosticMessage: DiagnosticMessage {
     }
 }
 
+struct FormulaireFixItMessage: FixItMessage {
+    let message: String
+    let fixItID: MessageID
+
+    init(message: String, id: String = "FormulaireFixIt") {
+        self.message = message
+        self.fixItID = MessageID(domain: "FormulaireMacro", id: id)
+    }
+}
+
 public struct FormulaireMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -160,7 +170,52 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             // If there is no accessor block, it's a stored property (writable by default for `var`)
             return varDecl
         }
-        
+
+        // Emit an error if any property uses a plain Swift array ([T] or Array<T>) and propose a fix-it
+        for varDecl in properties {
+            guard let binding = varDecl.bindings.first,
+                  let typeAnnotation = binding.typeAnnotation,
+                  let typeAnnotationRaw = typeAnnotation.type.description
+                .trimmingCharacters(in: .whitespacesAndNewlines) as String? else { continue }
+
+            let isBracketArray = typeAnnotationRaw.hasPrefix("[") && typeAnnotationRaw.hasSuffix("]")
+            let isGenericArray = typeAnnotationRaw.hasPrefix("Array<") && typeAnnotationRaw.hasSuffix(">")
+
+            // Extract element type for fix-it
+            var elementType: String? = nil
+            if isBracketArray {
+                let inner = String(typeAnnotationRaw.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                elementType = inner.isEmpty ? nil : inner
+            } else if isGenericArray {
+                let inner = String(typeAnnotationRaw.dropFirst("Array<".count).dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                elementType = inner.isEmpty ? nil : inner
+            }
+
+            if isBracketArray || isGenericArray {
+                let message = FormulaireDiagnosticMessage(
+                    message: "Formulaire does not support plain Swift arrays for form fields. Use IdentifiedArrayOf<Element> or IdentifiedArray<ID, Element> instead of [Element]/Array<Element>.",
+                    severity: .error
+                )
+
+                if let elem = elementType {
+                    let replacement = TypeSyntax(stringLiteral: "IdentifiedArrayOf<\(elem)> ")
+                    let fixIt = FixIt(
+                        message: FormulaireFixItMessage(message: "Replace with IdentifiedArrayOf<\(elem)>", id: "ReplaceArrayWithIdentifiedArray"),
+                        changes: [
+                            .replace(oldNode: Syntax(typeAnnotation.type), newNode: Syntax(replacement))
+                        ]
+                    )
+                    let diagnostic = Diagnostic(node: Syntax(typeAnnotation.type), message: message, fixIts: [fixIt])
+                    context.diagnose(diagnostic)
+                } else {
+                    context.diagnose(Diagnostic(
+                        node: Syntax(varDecl),
+                        message: message
+                    ))
+                }
+            }
+        }
+
         let fieldsStructProperties = properties.compactMap { varDecl -> String? in
             guard let binding = varDecl.bindings.first,
                   let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text else {

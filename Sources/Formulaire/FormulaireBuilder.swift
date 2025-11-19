@@ -21,12 +21,15 @@
 //
 
 import Foundation
+@_exported import IdentifiedCollections
 import SwiftUI
 
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
     @FocusState.Binding var focus: String?
     let renderedFields: Wrapper<[String]>
+    let fieldPrefix: String?
+    let getErrors: () -> [String: Error]
 
     /// Validates the entire form, applying errors as per the individual ``Formulaire/validate()`` methods.
     /// - Returns: `true` if there are no errors, `false` if there are errors.
@@ -35,22 +38,25 @@ public struct FormulaireBuilder<F: Formulaire> {
         formulaire.validate()
         return !formulaire.__validator.hasErrors()
     }
-}
 
-public struct ControlBuilder<F: Formulaire, V> {
-    var id: String
+    public func scope<S: Formulaire & Identifiable>(_ field: FieldPath<F, IdentifiedArrayOf<S>>, for child: S) -> FormulaireBuilder<S> {
+        let concreteField = F.__fields[keyPath: field]
 
-    /// A binding to the value for this particular field, which can be used in native components.
-    @Binding public var value: V
+        var list = concreteField.get(formulaire)
 
-    /// A binding for focus, so fields can hook into the focus system.
-    @FocusState.Binding public var focus: String?
+        let scopedBuilder = FormulaireBuilder<S>(
+            formulaire: Binding(
+                get: { child },
+                set: { list[id: child.id] = $0 }
+            ),
+            focus: $focus,
+            renderedFields: renderedFields,
+            fieldPrefix: concreteField.label + "[\(child.id.hashValue)]",
+            getErrors: { formulaire.__validator.errors }
+        )
 
-    /// A property holding the error for this field, if any exist.
-    public var error: Error?
-
-    /// A flag indicating whether this field is currently focused, for convenience.
-    public var isFocused: Bool {
-        focus == id
+        return scopedBuilder
     }
 }
+
+

@@ -40,15 +40,17 @@ public extension FormulaireBuilder {
             renderedFields.value.append(concreteField.label)
         }
 
+        let fieldId = [fieldPrefix, concreteField.label].compactMap(\.self).joined(separator: ".")
+
         return content(
             ControlBuilder(
                 id: concreteField.label,
                 value: $formulaire[field: concreteField],
                 focus: $focus,
-                error: formulaire.__validator.errors[concreteField.label]
+                error: getErrors()[fieldId]
             )
         )
-        .id(concreteField.label)
+        .id(fieldId)
     }
 
     /// Builds a submit button for the form.
@@ -140,12 +142,12 @@ public extension FormulaireBuilder {
         }
     }
 
-    /// Allows the user to build a visual content on the form for nested formulaire subjects, while conveniently providing
+    /// Allows the user to build some visual content on the form for nested formulaire subjects, while conveniently providing
     /// collected errors for that particular subject.
     ///
     /// - Parameters:
-    ///   - field: The field path that is to be mutated in the subject.
-    ///   - content: The view to be displayed, built with a provided list of errors matching the field.
+    ///   - field: The field path of the relevant value.
+    ///   - content: The view to be displayed, provided with a list of errors matching the field.
     func content<N: Formulaire, Content: View>(
         for field: FieldPath<F, N>,
         @ViewBuilder content: (_ errors: [String: Error]) -> Content
@@ -153,6 +155,20 @@ public extension FormulaireBuilder {
         let concreteField = F.__fields[keyPath: field]
 
         return content(formulaire.__validator.errors.filter { key, _ in key.contains("\(concreteField.label).") })
+    }
+
+    /// Allows the user to build some visual content on the form for nested lists of formulaire subjects, while conveniently providing the top-level error
+    /// collected for that particular list.
+    ///
+    /// - Parameters:
+    ///   - field: The field path of the relevant list.
+    ///   - content: The view to be displayed, provided with the top-level error matching the list.
+    func content<N: Formulaire & Identifiable, Content: View>(
+        for field: FieldPath<F, IdentifiedArrayOf<N>>,
+        @ViewBuilder content: (_ error: Error?) -> Content
+    ) -> some View {
+        let concreteField = F.__fields[keyPath: field]
+        return content(formulaire.__validator.errors[concreteField.label])
     }
 }
 

@@ -28,7 +28,7 @@ public final class Validator<F: Formulaire> {
     @ObservationIgnored
     var parent: String?
 
-    var errors: [String: Error] = [:]
+    public private(set) var errors: [String: Error] = [:]
 
     /// **[Internal use]** You do not instantiate this type directly.
     public init() {}
@@ -70,6 +70,14 @@ public extension Formulaire {
         let concreteField = Self.__fields[keyPath: nested]
         let target = concreteField.get(self)
         __validator._validateNested(target, parent: concreteField.label)
+    }
+
+    func validate<F: Formulaire>(_ nested: FieldPath<Self, IdentifiedArrayOf<F>>) {
+        let concreteField = Self.__fields[keyPath: nested]
+        let target = concreteField.get(self)
+        for value in target {
+            __validator._validateNested(value, parent: concreteField.label + "[\(value.id.hashValue)]")
+        }
     }
 }
 

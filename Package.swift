@@ -15,13 +15,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax", from: "602.0.0"),
-        .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.6.3")
+        .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.6.3"),
+        .package(url: "https://github.com/pointfreeco/swift-identified-collections.git", from: "1.1.1"),
     ],
     targets: [
         .target(
             name: "Formulaire",
             dependencies: [
-                "FormulaireMacros"
+                "FormulaireMacros",
+                .product(name: "IdentifiedCollections", package: "swift-identified-collections")
             ],
             swiftSettings: [
                 .defaultIsolation(MainActor.self),

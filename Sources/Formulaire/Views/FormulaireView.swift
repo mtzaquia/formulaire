@@ -46,7 +46,9 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
                     FormulaireBuilder<F>(
                         formulaire: $subject,
                         focus: $focus,
-                        renderedFields: renderedFields
+                        renderedFields: renderedFields,
+                        fieldPrefix: nil,
+                        getErrors: { subject.__validator.errors }
                     )
                 )
             }

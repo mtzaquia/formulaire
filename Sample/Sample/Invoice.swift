@@ -14,7 +14,7 @@ final class Invoice: CustomStringConvertible {
     var number: Int = 1
     var date: Date = Date()
     var client: Client?
-//    var items: IdentifiedArrayOf<InvoiceItem> = []
+    var items: IdentifiedArrayOf<InvoiceItem> = []
 
     func validate() {
         if number < 1 {
@@ -27,19 +27,19 @@ final class Invoice: CustomStringConvertible {
 
         validate(\.client)
 
-//        if items.isEmpty {
-//            addError("At least one item is required.", for: \.items)
-//        }
+        if items.isEmpty {
+            addError("At least one item is required.", for: \.items)
+        }
 
-//        validate(\.items)
+        validate(\.items)
     }
 
     var description: String {
         "Invoice"
         + "\n - \(number)"
         + "\n - \(date)"
-        + "\n - \(client)"
-//        + "\n - \(items)"
+        + "\n - \(String(describing: client))"
+        + "\n - \(items)"
     }
 }
 
@@ -136,30 +136,35 @@ struct InvoiceForm: View {
 
             }
 
-//            Section {
-//                forEach(form: form)
-//
-//                Button("Add") {
-//                    invoice.items.append(.init())
-//                }
-//            }
+            form.content(for: \.items) { error in
+                Section {
+                    ForEach(invoice.items) { item in
+                        let scoped = form.scope(\.items, for: item)
+                        scoped.textField(for: \.summary, label: "Summary")
+                    }
+                    .onDelete { offsets in
+                        invoice.items.remove(atOffsets: offsets)
+                    }
+
+                    Button("Add") {
+                        invoice.items.append(.init())
+                    }
+                } footer: {
+                    if let error {
+                        Text(error.localizedDescription)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
 
             Section {
                 LabeledContent("Has errors", value: hasErrors ? "Yes" : "No")
+                Text(invoice.__validator.errors.description)
                 Button("Validate") {
                     hasErrors = !form.validate()
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    func forEach(form: FormulaireBuilder<Invoice>) -> some View {
-//        ForEach(invoice.items) { item in
-//            form.textField(for: \.[items: item.id].summary, label: "Summary")
-//        }
-//        .onDelete { offsets in
-//            invoice.items.remove(atOffsets: offsets)
-//        }
     }
 }
