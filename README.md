@@ -2,7 +2,8 @@
 
 A lightweight Swift library for building validated, focus-aware forms using Swift macros and SwiftUI. Formulaire provides helpers to render controls, manage focus, and surface validation errors.
 
-![gif showcasing a simple invoice formulaire](https://github.com/user-attachments/assets/8b6b8ec9-d37a-466a-9a96-df7a06ecfe4f)
+![gif showcasing a simple invoice formulaire with validation and dynamic lists](https://github.com/user-attachments/assets/8b6b8ec9-d37a-466a-9a96-df7a06ecfe4f)
+![gif showcasing a person formulaire with keyboard navigation](https://github.com/user-attachments/assets/867fcaab-73cd-43d0-a16e-a68bb2e7d6f4)
 
 ## Instalation
 
