@@ -54,6 +54,11 @@ public extension FormulaireBuilder {
 
     /// Builds a submit button for the form.
     ///
+    /// When using the submit button, the form is validated automatically. If there are any errors, the first focusable field with an error becomes focused
+    /// automatically.
+    ///
+    /// - SeeAlso: ``FormulaireBuilder/validate()``, for validating forms and applying your own custom logic.
+    ///
     /// - Parameters:
     ///   - label: The button label.
     ///   - onSubmit: The action to be taken if the form is successfuly validated.

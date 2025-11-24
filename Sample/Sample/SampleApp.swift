@@ -20,7 +20,6 @@
 //  SOFTWARE.
 //
 
-
 import SwiftUI
 
 extension String: @retroactive LocalizedError {

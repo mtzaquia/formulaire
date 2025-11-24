@@ -128,10 +128,6 @@ public struct FormulaireMacro: MemberMacro, ExtensionMacro {
             ))
         }
 
-        // Note: If possible, update the inheritance clause of the attached type to add ": Formulaire" if not present.
-        // The macro system typically cannot modify the type declaration directly here.
-        // This would require a separate macro or a different approach.
-
         // Collect writable stored properties (exclude computed properties and immutable lets)
         let properties = declaration.memberBlock.members.compactMap { member -> VariableDeclSyntax? in
             guard let varDecl = member.decl.as(VariableDeclSyntax.self) else { return nil }

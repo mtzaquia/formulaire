@@ -87,7 +87,9 @@ struct PersonForm: View {
                     success = form.validate()
 
                     if !success {
-                        form.focus(on: \.address)
+                        // Example of focusing on nested fields using a scoped form.
+                        let scoped = form.scope(\.address)
+                        scoped.focus(on: \.addressLine1)
                     }
                 }
             }

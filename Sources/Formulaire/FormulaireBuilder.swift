@@ -34,15 +34,28 @@ public struct FormulaireBuilder<F: Formulaire> {
 
     /// Validates the entire form, applying errors as per the individual ``Formulaire/validate()`` methods.
     /// - Returns: `true` if there are no errors, `false` if there are errors.
+    @discardableResult
     public func validate() -> Bool {
         formulaire.__validator.clearAllErrors()
         formulaire.validate()
         return !formulaire.__validator.hasErrors()
     }
 
+    /// Focus on a given field on the form. For focusing on nested fields, call this function on a scoped builder instead. If the field is invalid or not focusable, nothing
+    /// happens.
+    ///
+    /// - SeeAlso: ``FormulaireBuilder/scope(_:)`` / ``FormulaireBuilder/scope(_:for:)`` for scoping the form and being able to focus
+    /// on nested fields.
+    ///
+    /// - Parameter field: The field path to become focused.
     public func focus<S>(on field: FieldPath<F, S>) {
         let concreteField = F.__fields[keyPath: field]
-        focus = concreteField.label
+        let fieldId = [fieldPrefix, concreteField.label].compactMap(\.self).joined(separator: ".")
+
+        scrollProxy.scrollTo(fieldId)
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            focus = fieldId
+        }
     }
 
     /// Scopes the builder to a given subject from a list of subjects, allowing you to nest fields inline.
