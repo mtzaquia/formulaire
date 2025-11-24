@@ -159,10 +159,10 @@ struct InvoiceForm: View {
             }
 
             Section {
-                LabeledContent("Has errors", value: hasErrors ? "Yes" : "No")
+                LabeledContent("Has errors", value: invoice.__validator.errors.isEmpty ? "No" : "Yes")
                 Text(invoice.__validator.errors.description)
-                Button("Validate") {
-                    hasErrors = !form.validate()
+                form.submitButton("Validate") {
+                    print("Success!")
                 }
             }
         }

@@ -32,7 +32,10 @@ struct SampleApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                ContentView()
+                PersonForm()
+                    .tabItem {
+                        Label("Person", systemImage: "person")
+                    }
                 InvoiceForm()
                     .tabItem {
                         Label("Invoice", systemImage: "text.document")

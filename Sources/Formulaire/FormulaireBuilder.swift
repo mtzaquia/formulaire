@@ -26,6 +26,7 @@ import SwiftUI
 
 public struct FormulaireBuilder<F: Formulaire> {
     @Binding var formulaire: F
+    let scrollProxy: ScrollViewProxy
     @FocusState.Binding var focus: String?
     let renderedFields: Wrapper<[String]>
     let fieldPrefix: String?
@@ -37,6 +38,11 @@ public struct FormulaireBuilder<F: Formulaire> {
         formulaire.__validator.clearAllErrors()
         formulaire.validate()
         return !formulaire.__validator.hasErrors()
+    }
+
+    public func focus<S>(on field: FieldPath<F, S>) {
+        let concreteField = F.__fields[keyPath: field]
+        focus = concreteField.label
     }
 
     /// Scopes the builder to a given subject from a list of subjects, allowing you to nest fields inline.
@@ -72,9 +78,46 @@ public struct FormulaireBuilder<F: Formulaire> {
                 get: { child },
                 set: { list[id: child.id] = $0 }
             ),
+            scrollProxy: scrollProxy,
             focus: $focus,
             renderedFields: renderedFields,
             fieldPrefix: concreteField.label + "[\(child.id.hashValue)]",
+            getErrors: { formulaire.__validator.errors }
+        )
+
+        return scopedBuilder
+    }
+
+    /// Scopes the builder to a nested subject on the top-level subject, allowing you to nest fields inline.
+    ///
+    /// ```swift
+    /// form.textField(for: \.name, label: "Address name")
+    ///
+    /// Section {
+    ///   let scoped = form.scope(\.address)
+    ///   scoped.textField(for: \.addressLine1, label: "Address line 1")
+    ///   scoped.textField(for: \.addressLine2, label: "Address line 1")
+    ///   scoped.textField(for: \.zipCode, label: "ZIP code")
+    ///   scoped.textField(for: \.city, label: "City")
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - field: The nested field in which the builder should be scoped to.
+    public func scope<S: Formulaire>(_ field: FieldPath<F, S>) -> FormulaireBuilder<S> {
+        let concreteField = F.__fields[keyPath: field]
+
+        var child = concreteField.get(formulaire)
+
+        let scopedBuilder = FormulaireBuilder<S>(
+            formulaire: Binding(
+                get: { child },
+                set: { child = $0 }
+            ),
+            scrollProxy: scrollProxy,
+            focus: $focus,
+            renderedFields: renderedFields,
+            fieldPrefix: concreteField.label,
             getErrors: { formulaire.__validator.errors }
         )
 

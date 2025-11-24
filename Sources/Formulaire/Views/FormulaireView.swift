@@ -39,12 +39,12 @@ public struct FormulaireView<F: Formulaire, C: View>: View {
 
     public var body: some View {
         ScrollViewReader { proxy in
+            let _ = renderedFields.value.removeAll()
             Form {
-                let _ = renderedFields.value.removeAll()
-
                 builder(
                     FormulaireBuilder<F>(
                         formulaire: $subject,
+                        scrollProxy: proxy,
                         focus: $focus,
                         renderedFields: renderedFields,
                         fieldPrefix: nil,

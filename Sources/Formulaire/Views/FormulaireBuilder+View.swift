@@ -36,15 +36,14 @@ public extension FormulaireBuilder {
     ) -> some View {
         let concreteField = F.__fields[keyPath: field]
 
-        if focusable {
-            renderedFields.value.append(concreteField.label)
-        }
-
         let fieldId = [fieldPrefix, concreteField.label].compactMap(\.self).joined(separator: ".")
+        if focusable {
+            renderedFields.value.append(fieldId)
+        }
 
         return content(
             ControlBuilder(
-                id: concreteField.label,
+                id: fieldId,
                 value: $formulaire[field: concreteField],
                 focus: $focus,
                 error: getErrors()[fieldId]
@@ -62,6 +61,13 @@ public extension FormulaireBuilder {
         Button(label) {
             if validate() {
                 onSubmit()
+            } else {
+                if let firstError = renderedFields.value.first(where: { formulaire.__validator.errors[$0] != nil }) {
+                    scrollProxy.scrollTo(firstError)
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        focus = firstError
+                    }
+                }
             }
         }
         .bold()
